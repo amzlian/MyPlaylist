@@ -24,7 +24,7 @@ const DEFAULT_DATA_URL = 'data/songs.json';
 const COVER_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%23181d2a%27/%3E%3Ctext x=%2750%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E';
 
 // 🔑 SET PASSWORD ADMIN KAMU DI SINI!
-const ADMIN_PASSWORD = "amzlianrahasia"; 
+const ADMIN_PASSWORD = "amzlian"; 
 
 let officialSongs = []; // Dari songs.json
 let cloudSongs = [];    // Dari Firebase (Akses Publik ber-izin)
