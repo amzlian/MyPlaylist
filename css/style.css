@@ -657,4 +657,76 @@ pre { font-family: 'Space Mono', monospace; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+/* Tambahkan kode ini di bagian paling bawah file css/style.css kamu */
+
+body {
+  padding-bottom: 120px; /* Memberikan ruang ekstra di bawah agar kartu lagu tidak tertutup player */
+}
+
+/* ── Live Mini Player Styled ── */
+.mini-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #131720;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.6);
+  z-index: 999;
+}
+.player-info {
+  width: 200px;
+  flex-shrink: 0;
+}
+.player-frame {
+  flex-grow: 1;
+  max-width: 700px;
+  height: 80px;
+  background: #0c0e14;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.player-frame iframe {
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+.btn-close-player {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--danger);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: all var(--transition);
+}
+.btn-close-player:hover {
+  background: rgba(247,95,124,0.1);
+  border-color: var(--danger);
+}
+
+@media (max-width: 768px) {
+  .mini-player {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+  .player-info {
+    width: 100%;
+  }
+  .player-frame {
+    max-width: 100%;
+    height: 80px;
+  }
+}
 
