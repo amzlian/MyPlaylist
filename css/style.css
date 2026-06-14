@@ -730,3 +730,45 @@ body {
   }
 }
 
+/* ── Dropdown Pilihan Putar Musik Melayang ── */
+.card-actions {
+  position: relative;
+}
+.player-dropdown {
+  position: absolute;
+  bottom: 110%;
+  left: 0;
+  width: 100%;
+  background: #1c2333;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 4px;
+}
+.dropdown-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  border-radius: 6px;
+  text-align: left;
+  transition: background var(--transition);
+}
+.dropdown-opt:hover {
+  background: var(--surface);
+}
+.dropdown-opt-main {
+  background: var(--accent);
+  color: #fff;
+}
+.dropdown-opt-main:hover {
+  background: #9180ff;
+}
