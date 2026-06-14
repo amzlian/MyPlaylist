@@ -182,37 +182,14 @@
     </div>
   </div>
 
-  <div id="miniPlayer" class="mini-player" style="position: fixed; bottom: 0; left: 0; right: 0; background: #111622; border-top: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 999; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);" hidden>
-    
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="min-width: 0; flex: 1;">
-        <p id="playerTitle" style="font-weight: 600; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px;">Judul Lagu</p>
-        <p id="playerArtist" style="font-size: 12px; color: var(--subtle); margin: 2px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nama Artis</p>
-      </div>
-      <button id="closePlayer" style="background: transparent; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0 5px;">&times;</button>
+  <div id="miniPlayer" class="mini-player" hidden>
+    <div class="player-info">
+      <div id="playerTitle" style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Judul</div>
+      <div id="playerArtist" style="font-size:12px; color:var(--subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Artis</div>
     </div>
-
-    <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-      <span id="currentTime" style="font-size: 11px; color: var(--muted); font-family: monospace;">0:00</span>
-      <input id="playerProgress" type="range" value="0" min="0" max="100" style="flex: 1; accent-color: var(--accent); height: 4px; cursor: pointer;" />
-      <span id="durationTime" style="font-size: 11px; color: var(--muted); font-family: monospace;">0:00</span>
-    </div>
-
-    <div style="display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 5px;">
-      <button id="btnShuffle" style="background:transparent; border:none; color:var(--muted); font-size:16px; cursor:pointer; transition:0.2s;" title="Acak Lagu">🔀</button>
-      
-      <button id="btnPrev" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer;" title="Lagu Sebelumnya">⏮</button>
-      
-      <button id="btnPlayPause" style="background:var(--accent); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(124,106,247,0.3);" title="Play/Pause">⏸</button>
-      
-      <button id="btnNext" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer;" title="Lagu Selanjutnya">⏭</button>
-      
-      <button id="btnRepeat" style="background:transparent; border:none; color:var(--muted); font-size:16px; cursor:pointer; transition:0.2s;" title="Ulangi Lagu">🔁</button>
-    </div>
-
-    <audio id="nexusAudioEngine" style="display:none;"></audio>
+    <div id="playerFrameContainer" class="player-frame"></div>
+    <button id="closePlayer" class="btn-close-player">✕</button>
   </div>
-
 
   <div class="toast" id="toast" hidden></div>
 
