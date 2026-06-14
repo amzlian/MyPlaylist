@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (SUPER SEARCH FIX)
+   AMZ LIAN — Playlist  ·  script.js (UNIVERSAL SEARCH HUB)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
@@ -30,7 +30,7 @@ let cloudSongs = [];
 let localSongs = [];    
 let pinnedOfficialIds = []; 
 let songs = [];         
-let externalSearchResults = []; // Menyimpan hasil dari iTunes API
+let externalSearchResults = []; 
 
 let currentSongId = null;
 let editingSongId = null;
@@ -92,7 +92,9 @@ const closePlayer = document.getElementById('closePlayer');
 const PLATFORMS_CONFIG = [
   { key: 'youtube', label: 'YouTube', icon: `<svg viewBox="0 0 24 24" fill="#FF0000" style="width:14px;height:14px;"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>` },
   { key: 'youtubeMusic', label: 'YT Music', icon: `<svg viewBox="0 0 24 24" fill="#FF0000" style="width:14px;height:14px;"><circle cx="12" cy="12" r="11" fill="#FF0000"/><path d="M12 6.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zm-.5 2.5h1v4.5l3.5 2-.5.87-4-2.37V9z" fill="#fff"/></svg>` },
-  { key: 'spotify', label: 'Spotify', icon: `<svg viewBox="0 0 24 24" fill="#1DB954" style="width:14px;height:14px;"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.5 17.3c-.2.3-.6.4-.9.2-2.6-1.6-5.8-1.9-9.6-1.1-.4.1-.7-.2-.8-.6-.1-.4.2-.7.6-.8 4.2-.9 7.7-.5 10.6 1.3.3.3.4.7.1 1zm1.5-3.3c-.3.4-.8.5-1.2.2-2.9-1.8-7.4-2.3-10.9-1.3-.4.1-.9-.1-1-.5-.1-.4.1-.9.5-1 4-.1 9 .5 12.3 2.5.4.1.5.7.3 1.1zm.1-3.4c-3.5-2.1-9.4-2.3-12.7-1.3-.5.2-1-.1-1.2-.6-.2-.5.1-1 .6-1.2 3.9-1.2 10.3-.9 14.4 1.5.5.3.6.9.4 1.4-.3.5-.9.6-1.5.2z"/></svg>` }
+  { key: 'spotify', label: 'Spotify', icon: `<svg viewBox="0 0 24 24" fill="#1DB954" style="width:14px;height:14px;"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.5 17.3c-.2.3-.6.4-.9.2-2.6-1.6-5.8-1.9-9.6-1.1-.4.1-.7-.2-.8-.6-.1-.4.2-.7.6-.8 4.2-.9 7.7-.5 10.6 1.3.3.3.4.7.1 1zm1.5-3.3c-.3.4-.8.5-1.2.2-2.9-1.8-7.4-2.3-10.9-1.3-.4.1-.9-.1-1-.5-.1-.4.1-.9.5-1 4-.1 9 .5 12.3 2.5.4.1.5.7.3 1.1zm.1-3.4c-3.5-2.1-9.4-2.3-12.7-1.3-.5.2-1-.1-1.2-.6-.2-.5.1-1 .6-1.2 3.9-1.2 10.3-.9 14.4 1.5.5.3.6.9.4 1.4-.3.5-.9.6-1.5.2z"/></svg>` },
+  { key: 'appleMusic', label: 'Apple Music', icon: `<svg viewBox="0 0 24 24" fill="#FC3C44" style="width:14px;height:14px;"><path d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.5 17.5h-2.833v-3.667c0-2-.834-2.5-1.917-2.5-1.083 0-1.75.833-1.75 2.5V17.5H8.167V10.5H11v1.25c.333-.667 1.25-1.5 2.75-1.5 1.833 0 3.75 1.083 3.75 4.25V17.5zm-9.334 0H5.333V10.5h2.833V17.5zm-1.416-8.334a1.583 1.583 0 110-3.166 1.583 1.583 0 010 3.166z"/></svg>` },
+  { key: 'soundcloud', label: 'SoundCloud', icon: `<svg viewBox="0 0 24 24" fill="#FF5500" style="width:14px;height:14px;"><path d="M1.18 17.36c0 .75.61 1.36 1.37 1.36a1.37 1.37 0 001.37-1.36v-5.94a1.37 1.37 0 00-1.37-1.36 1.37 1.37 0 00-1.37 1.36v5.94zm18.1-7.1a7.5 7.5 0 00-6.24-3.35c-.44 0-.88.04-1.3.12V4.76a1.37 1.37 0 00-2.74 0v12.6c0 .75.61 1.36 1.37 1.36h.02c.16 0 .32-.03.48-.08a7.5 7.5 0 003.41.82c4.14 0 7.5-3.35 7.5-7.5a7.5 7.5 0 00-2.5-5.7z"/></svg>` }
 ];
 
 function sanitizeText(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
@@ -173,7 +175,7 @@ function renderTagChips() {
   });
 }
 
-// ── FUNGSI BARU: TARIK DATA DARI ITUNES API (SANGAT STABIL & FULL COVER) ──
+// ── FETCH DATA & BUAT LINK PENCARIAN UNTUK SEMUA PLATFORM ──
 async function fetchFromExternalServer(query) {
   if (!query || query.trim().length < 2) { externalSearchResults = []; renderAll(); return; }
   
@@ -183,8 +185,8 @@ async function fetchFromExternalServer(query) {
     const data = await response.json();
     
     externalSearchResults = data.results.map(item => {
-      // Mengambil gambar resolusi tinggi dari iTunes
       let highResCover = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '300x300bb') : '';
+      const searchStr = encodeURIComponent(item.trackName + ' ' + item.artistName);
       
       return {
         id: `ext-${item.trackId}`,
@@ -193,8 +195,11 @@ async function fetchFromExternalServer(query) {
         cover: highResCover,
         isExternal: true, 
         links: {
-          // Membuat link youtube pintar otomatis agar langsung main
-          youtube: `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(item.trackName + ' ' + item.artistName)}&autoplay=1`
+          // Membuat link pintar untuk mencari otomatis di platform masing-masing
+          ytMusicSearch: `https://music.youtube.com/search?q=${searchStr}`,
+          spotifySearch: `https://open.spotify.com/search/${searchStr}`,
+          appleMusicSearch: `https://music.apple.com/search?term=${searchStr}`,
+          soundcloudSearch: `https://soundcloud.com/search?q=${searchStr}`
         }
       };
     });
@@ -237,8 +242,8 @@ function buildCard(song) {
       </div>
       <div class="card-actions" style="margin-top:auto; display:flex; gap:6px;">
         ${song.isExternal 
-          ? `<button class="card-btn card-btn-play" style="flex:1; background:var(--accent);" onclick="event.stopPropagation(); playExternalDirect('${song.links.youtube}', '${sanitizeText(song.title)}', '${sanitizeText(song.artist)}')">▶ Putar</button>
-             <button class="card-btn" style="padding:0 8px; font-size:11px; border:1px solid var(--accent-2); color:var(--accent-2);" onclick="event.stopPropagation(); quickAddFromExternal('${sanitizeText(song.title)}', '${sanitizeText(song.artist)}', '${song.links.youtube}', '${song.cover}')">➕ Catat</button>`
+          ? `<button class="card-btn card-btn-play" data-action="toggle-ext-menu" style="flex:1; background:var(--accent); font-size:11px;">🔍 Cari Link...</button>
+             <button class="card-btn" style="padding:0 8px; font-size:11px; border:1px solid var(--accent-2); color:var(--accent-2);" onclick="event.stopPropagation(); quickAddFromExternal('${sanitizeText(song.title).replace(/'/g, "\\'")}', '${sanitizeText(song.artist).replace(/'/g, "\\'")}', '${song.cover}')">➕ Catat</button>`
           : `<button class="card-btn card-btn-play" data-action="toggle-menu" style="width:100%;">▶ Putar Musik</button>`
         }
         <div class="player-dropdown" id="dropdown-${song.id}" hidden></div>
@@ -246,8 +251,39 @@ function buildCard(song) {
     </div>
   `;
 
-  if (!song.isExternal) {
-    const dropdown = card.querySelector(`#dropdown-${song.id}`);
+  const dropdown = card.querySelector(`#dropdown-${song.id}`);
+
+  // Menu Dropdown untuk Lagu dari Internet (Cari Link)
+  if (song.isExternal) {
+    const searchLinks = [
+      { label: 'YouTube Music', url: song.links.ytMusicSearch, icon: PLATFORMS_CONFIG.find(p=>p.key==='youtubeMusic').icon },
+      { label: 'Spotify', url: song.links.spotifySearch, icon: PLATFORMS_CONFIG.find(p=>p.key==='spotify').icon },
+      { label: 'Apple Music', url: song.links.appleMusicSearch, icon: PLATFORMS_CONFIG.find(p=>p.key==='appleMusic').icon },
+      { label: 'SoundCloud', url: song.links.soundcloudSearch, icon: PLATFORMS_CONFIG.find(p=>p.key==='soundcloud').icon },
+    ];
+    
+    searchLinks.forEach(sl => {
+      const btnOpt = document.createElement('button');
+      btnOpt.className = 'dropdown-opt';
+      btnOpt.innerHTML = `${sl.icon} Cari di ${sl.label}`;
+      btnOpt.onclick = (e) => { e.stopPropagation(); window.open(sl.url, '_blank'); dropdown.hidden = true; };
+      dropdown.appendChild(btnOpt);
+    });
+
+    card.addEventListener('click', (e) => {
+      const btnExt = e.target.closest('[data-action="toggle-ext-menu"]');
+      if (btnExt) {
+        e.stopPropagation();
+        document.querySelectorAll('.player-dropdown').forEach(d => { if(d !== dropdown) d.hidden = true; });
+        dropdown.hidden = !dropdown.hidden;
+      } else {
+        dropdown.hidden = true;
+      }
+    });
+
+  } 
+  // Menu Dropdown untuk Lagu yang Sudah Dicatat (Putar Langsung)
+  else {
     const optDirect = document.createElement('button');
     optDirect.className = 'dropdown-opt dropdown-opt-main';
     optDirect.innerHTML = `⚡ Putar Langsung`;
@@ -259,7 +295,7 @@ function buildCard(song) {
         if (song.links[p.key]) {
           const btnOpt = document.createElement('button');
           btnOpt.className = 'dropdown-opt';
-          btnOpt.innerHTML = `${p.icon} Ke ${p.label}`;
+          btnOpt.innerHTML = `${p.icon} Buka ${p.label}`;
           btnOpt.onclick = (e) => { e.stopPropagation(); window.open(song.links[p.key], '_blank'); dropdown.hidden = true; };
           dropdown.appendChild(btnOpt);
         }
@@ -286,7 +322,6 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.player-dropdown').forEach(d => d.hidden = true);
 });
 
-// ── LOGIKA RENDER (TAMPILKAN LOKAL & INTERNET BERSAMAAN) ──
 function renderAll() {
   renderTagChips();
   const list = getFilteredSorted();
@@ -298,7 +333,6 @@ function renderAll() {
   }
   emptyState.hidden = true;
 
-  // 1. Jika ada pencarian, tampilkan pembatas untuk hasil di Playlist Lokal
   if (searchQuery) {
     const localHeader = document.createElement('div');
     localHeader.style.cssText = "grid-column: 1 / -1; margin-bottom: -10px;";
@@ -306,7 +340,6 @@ function renderAll() {
     playlistGrid.appendChild(localHeader);
   }
 
-  // Render hasil pencarian di playlist kamu
   if (list.length > 0) {
     list.forEach(song => playlistGrid.appendChild(buildCard(song)));
   } else if (searchQuery) {
@@ -316,15 +349,14 @@ function renderAll() {
     playlistGrid.appendChild(noLocal);
   }
 
-  // 2. SELALU TAMPILKAN HASIL DARI INTERNET JIKA ADA PENCARIAN
   if (searchQuery && externalSearchResults.length > 0) {
     const sectionDivider = document.createElement('div');
     sectionDivider.style.cssText = "grid-column: 1 / -1; margin-top: 35px; border-top: 2px dashed var(--border); padding-top: 20px; text-align:center;";
     sectionDivider.innerHTML = `
       <span style="font-family:'Space Mono',monospace; font-size:12px; color:var(--accent); background:rgba(124,106,247,0.15); padding:6px 16px; border-radius:999px;">
-        🌍 MENEMUKAN HASIL DARI INTERNET
+        🌍 REKOMENDASI DARI INTERNET
       </span>
-      <p style="margin-top:10px; font-size:13px; color:var(--text-dim);">Lagu-lagu di bawah ini ditarik langsung dari server luar. Kamu bisa memutarnya atau langsung mencatatnya ke playlistmu!</p>
+      <p style="margin-top:10px; font-size:13px; color:var(--text-dim);">Klik <b>Cari Link...</b> untuk copy link lagunya dari platform kesukaanmu, lalu klik <b>Catat</b> untuk menyimpan!</p>
     `;
     playlistGrid.appendChild(sectionDivider);
 
@@ -334,20 +366,16 @@ function renderAll() {
   }
 }
 
-// ── KONTROL INPUT PENCARIAN (DEBOUNCE UNTUK API) ──
 searchInput.oninput = (e) => { 
   searchQuery = e.target.value; 
   clearSearch.hidden = !searchQuery; 
-  
-  // Render hasil lokal dulu secara instan
   renderAll(); 
 
-  // Menunggu ketikan selesai baru tembak ke server luar
   clearTimeout(searchTimeout);
   if (searchQuery.trim().length >= 2) {
     searchTimeout = setTimeout(() => {
       fetchFromExternalServer(searchQuery);
-    }, 700); // 0.7 detik
+    }, 700); 
   } else {
     externalSearchResults = [];
     renderAll();
@@ -356,23 +384,20 @@ searchInput.oninput = (e) => {
 
 clearSearch.onclick = () => { searchQuery = ''; searchInput.value = ''; clearSearch.hidden = true; externalSearchResults = []; renderAll(); };
 
-// Fungsi putar lagu internet
-window.playExternalDirect = function(youtubeUrl, title, artist) {
-  playerTitle.textContent = title;
-  playerArtist.textContent = artist;
-  miniPlayer.hidden = false;
-  playerFrameContainer.innerHTML = `<iframe src="${youtubeUrl}" allow="autoplay; encrypted-media" allowfullscreen style="border:none; width:100%; height:100%;"></iframe>`;
-};
-
-// Fungsi catat lagu internet
-window.quickAddFromExternal = function(title, artist, youtubeUrl, coverUrl) {
+// ── FUNGSI PINTAR: CATAT LAGU KE FORMULIR ──
+window.quickAddFromExternal = function(title, artist, coverUrl) {
   openFormModal();
   fTitle.value = title;
   fArtist.value = artist;
   fCover.value = coverUrl;
   updateCoverPreview(coverUrl);
-  fYoutube.value = youtubeUrl;
-  showToast("📋 Data lagu otomatis masuk ke Form!");
+  
+  fYoutube.value = '';
+  fYoutubeMusic.value = '';
+  fSpotify.value = '';
+  fAppleMusic.value = '';
+  fSoundcloud.value = '';
+  showToast("📋 Silakan paste link dari platform yang sudah kamu copy!");
 };
 
 function runLivePlayer(song) {
@@ -395,19 +420,14 @@ function runLivePlayer(song) {
   if (yLink) {
     let videoId = '';
     if (yLink.includes('v=')) videoId = yLink.split('v=')[1]?.split('&')[0];
-    else if (yLink.includes('embed?list')) {
-      playerFrameContainer.innerHTML = `<iframe src="${yLink}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-      return;
-    } else {
-      videoId = yLink.split('/').pop()?.split('?')[0];
-    }
+    else videoId = yLink.split('/').pop()?.split('?')[0];
     
     if (videoId) {
       playerFrameContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
       return;
     }
   }
-  playerFrameContainer.innerHTML = `<p style="color:var(--danger); font-size:12px; text-align:center; padding-top:30px;">Platform tidak didukung pemutar langsung.</p>`;
+  playerFrameContainer.innerHTML = `<p style="color:var(--danger); font-size:12px; text-align:center; padding-top:30px;">Format link tidak dikenali / kosong.</p>`;
 }
 
 closePlayer.onclick = () => { miniPlayer.hidden = true; playerFrameContainer.innerHTML = ''; };
