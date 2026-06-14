@@ -98,7 +98,13 @@
     <div class="modal modal-form" id="formModal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
       <button class="modal-close" id="formClose" aria-label="Tutup">✕</button>
       <h2 id="formTitle" class="form-title">Tambah Lagu</h2>
-
+      <div class="form-body">
+        <div class="form-row" style="margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 15px;">
+          <label class="form-label" style="color:var(--accent-2); display:flex; align-items:center; gap:4px;">⚡ Cari Otomatis dari Internet <span class="form-hint">(Klik untuk isi otomatis)</span></label>
+          <input id="fAutoSearch" type="text" class="form-input" style="border-color:var(--accent-2)" placeholder="Ketik judul lagu / artis di sini untuk mengisi data..." autocomplete="off" />
+          <div id="fAutoSearchResults" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; max-height:180px; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px;"></div>
+        </div>
+        ```
       <div class="form-body">
         <div class="form-row">
           <label class="form-label" for="fTitle">Judul Lagu <span class="req">*</span></label>
