@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (LIVE SEARCH FIX)
+   AMZ LIAN — Playlist  ·  script.js (REAL-TIME EXTERNAL SEARCH)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
@@ -23,13 +23,14 @@ const PINNED_OFFICIAL_KEY = 'amzLianPlaylist_PinnedOfficial';
 const DEFAULT_DATA_URL = 'data/songs.json';
 const COVER_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%23181d2a%27/%3E%3Ctext x=%2750%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E';
 
-const ADMIN_PASSWORD = "amzlian"; // Ganti dengan password pilihanmu!
+const ADMIN_PASSWORD = "amzlianrahasia"; // Ganti dengan password pilihanmu!
 
 let officialSongs = []; 
 let cloudSongs = [];    
 let localSongs = [];    
 let pinnedOfficialIds = []; 
 let songs = [];         
+let externalSearchResults = []; // Menyimpan hasil pencarian dari luar luar web
 
 let currentSongId = null;
 let editingSongId = null;
@@ -37,6 +38,7 @@ let activeTag = '';
 let searchQuery = '';
 let sortMode = 'newest';
 let sortPanelOpen = false;
+let searchTimeout = null;
 
 const playlistGrid   = document.getElementById('playlistGrid');
 const emptyState     = document.getElementById('emptyState');
@@ -173,15 +175,51 @@ function renderTagChips() {
   });
 }
 
+// ── FUNGSI REVOLUSIONER: FETCH DATA LANGSUNG DARI LUAR WEB (API) ──
+async function fetchFromExternalServer(query) {
+  if (!query || query.trim().length < 2) { externalSearchResults = []; return; }
+  
+  try {
+    // Menembak server cermin Invidious API publik untuk mencari lagu/video musik teratas
+    const response = await fetch(`https://invidious.v0id.org/api/v1/search?q=${encodeURIComponent(query)}&type=video`);
+    if (!response.ok) return;
+    const data = await response.json();
+    
+    // Ambil maksimal 4 hasil teratas, lalu konversi formatnya menjadi kartu lagu biasa
+    externalSearchResults = data.slice(0, 4).map(item => {
+      return {
+        id: `ext-${item.videoId}`,
+        title: item.title,
+        artist: item.author || "YouTube Artist",
+        cover: item.videoThumbnails ? item.videoThumbnails.find(t => t.quality === "medium")?.url : "",
+        isExternal: true, // Tanda bahwa lagu berasal dari luar database web
+        links: {
+          youtube: `https://www.youtube.com/watch?v=${item.videoId}`
+        }
+      };
+    });
+    renderAll(); // Gambar ulang halaman setelah data luar berhasil dimuat
+  } catch (error) {
+    console.error("Gagal menarik data dari luar web:", error);
+  }
+}
+
 function buildCard(song) {
   const card = document.createElement('article');
   card.className = `song-card${song.pinned ? ' is-pinned' : ''}`;
   card.dataset.id = song.id;
 
+  // Berikan warna border atau style khusus jika kartu ditarik dari server luar web
+  if (song.isExternal) {
+    card.style.border = "1px solid rgba(124, 106, 247, 0.4)";
+    card.style.boxShadow = "0 4px 20px rgba(124, 106, 247, 0.1)";
+  }
+
   const hasCover = song.cover && song.cover.trim();
   let badgeHtml = `<span class="card-tag" style="background:rgba(255, 255, 255, 0.1); color:#ccc;">🔒 Pribadi</span>`;
   if (song.isOfficial) badgeHtml = `<span class="card-tag" style="background:rgba(61, 220, 172, 0.15); color:var(--accent-2);">🌐 AMZ LIAN</span>`;
   if (song.isCloud) badgeHtml = `<span class="card-tag" style="background:rgba(124, 106, 247, 0.15); color:var(--accent);">👥 Publik</span>`;
+  if (song.isExternal) badgeHtml = `<span class="card-tag" style="background:rgba(255, 165, 0, 0.15); color:#ffa500;">🌍 Server Luar</span>`;
 
   card.innerHTML = `
     <div class="card-cover-wrap">
@@ -196,45 +234,51 @@ function buildCard(song) {
       <p class="card-artist">${sanitizeText(song.artist)}</p>
       <div class="card-tags">
         ${badgeHtml}
-        ${(song.tags || []).slice(0,1).map(t => `<span class="card-tag">${sanitizeText(t)}</span>`).join('')}
+        ${!song.isExternal && (song.tags || []).slice(0,1).map(t => `<span class="card-tag">${sanitizeText(t)}</span>`).join('') || ''}
       </div>
-      <div class="card-actions" style="margin-top:auto;">
-        <button class="card-btn card-btn-play" data-action="toggle-menu">▶ Putar Musik</button>
+      <div class="card-actions" style="margin-top:auto; display:flex; gap:6px;">
+        ${song.isExternal 
+          ? `<button class="card-btn card-btn-play style-main" style="flex:1; background:var(--accent);" onclick="event.stopPropagation(); playExternalDirect('${song.links.youtube}', '${sanitizeText(song.title)}')">▶ Putar</button>
+             <button class="card-btn" style="padding:0 8px; font-size:11px; border-color:var(--accent-2); color:var(--accent-2);" onclick="event.stopPropagation(); quickAddFromExternal('${sanitizeText(song.title)}', '${sanitizeText(song.artist)}', '${song.links.youtube}')">➕ Catat</button>`
+          : `<button class="card-btn card-btn-play" data-action="toggle-menu" style="width:100%;">▶ Putar Musik</button>`
+        }
         <div class="player-dropdown" id="dropdown-${song.id}" hidden></div>
       </div>
     </div>
   `;
 
-  const dropdown = card.querySelector(`#dropdown-${song.id}`);
-  const optDirect = document.createElement('button');
-  optDirect.className = 'dropdown-opt dropdown-opt-main';
-  optDirect.innerHTML = `⚡ Putar Langsung`;
-  optDirect.onclick = (e) => { e.stopPropagation(); runLivePlayer(song); dropdown.hidden = true; };
-  dropdown.appendChild(optDirect);
+  if (!song.isExternal) {
+    const dropdown = card.querySelector(`#dropdown-${song.id}`);
+    const optDirect = document.createElement('button');
+    optDirect.className = 'dropdown-opt dropdown-opt-main';
+    optDirect.innerHTML = `⚡ Putar Langsung`;
+    optDirect.onclick = (e) => { e.stopPropagation(); runLivePlayer(song); dropdown.hidden = true; };
+    dropdown.appendChild(optDirect);
 
-  if (song.links) {
-    PLATFORMS_CONFIG.forEach(p => {
-      if (song.links[p.key]) {
-        const btnOpt = document.createElement('button');
-        btnOpt.className = 'dropdown-opt';
-        btnOpt.innerHTML = `${p.icon} Ke ${p.label}`;
-        btnOpt.onclick = (e) => { e.stopPropagation(); window.open(song.links[p.key], '_blank'); dropdown.hidden = true; };
-        dropdown.appendChild(btnOpt);
+    if (song.links) {
+      PLATFORMS_CONFIG.forEach(p => {
+        if (song.links[p.key]) {
+          const btnOpt = document.createElement('button');
+          btnOpt.className = 'dropdown-opt';
+          btnOpt.innerHTML = `${p.icon} Ke ${p.label}`;
+          btnOpt.onclick = (e) => { e.stopPropagation(); window.open(song.links[p.key], '_blank'); dropdown.hidden = true; };
+          dropdown.appendChild(btnOpt);
+        }
+      });
+    }
+
+    card.addEventListener('click', (e) => {
+      const btnPlay = e.target.closest('[data-action="toggle-menu"]');
+      if (btnPlay) {
+        e.stopPropagation();
+        document.querySelectorAll('.player-dropdown').forEach(d => { if(d !== dropdown) d.hidden = true; });
+        dropdown.hidden = !dropdown.hidden;
+      } else {
+        dropdown.hidden = true;
+        openDetailModal(song.id);
       }
     });
   }
-
-  card.addEventListener('click', (e) => {
-    const btnPlay = e.target.closest('[data-action="toggle-menu"]');
-    if (btnPlay) {
-      e.stopPropagation();
-      document.querySelectorAll('.player-dropdown').forEach(d => { if(d !== dropdown) d.hidden = true; });
-      dropdown.hidden = !dropdown.hidden;
-    } else {
-      dropdown.hidden = true;
-      openDetailModal(song.id);
-    }
-  });
 
   return card;
 }
@@ -243,63 +287,48 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.player-dropdown').forEach(d => d.hidden = true);
 });
 
-// ── RENDER LIVE PENCARIAN MANDIRI OTOMATIS ──
+// ── ENGINE DRAWING DENGAN HASIL INTEGRASI DATABASE & SERVER LUAR ──
 function renderAll() {
   renderTagChips();
   const list = getFilteredSorted();
   playlistGrid.innerHTML = '';
 
-  if (songs.length === 0 && !searchQuery) { emptyState.hidden = false; return; }
+  if (songs.length === 0 && externalSearchResults.length === 0 && !searchQuery) { emptyState.hidden = false; return; }
   emptyState.hidden = true;
 
-  // Jika ada lagu di playlist yang cocok, gambar kartunya dulu
+  // 1. Gambar kartu lagu yang bersumber dari database internal kamu
   list.forEach(song => playlistGrid.appendChild(buildCard(song)));
 
-  // JALUR REKOMENDASI LIVE OTOMATIS SAAT USER MENGETIK DAN LAGU TIDAK COCOK ATAU TERBATAS
-  if (searchQuery && searchQuery.trim().length > 1) {
-    const liveSearchSection = document.createElement('div');
-    liveSearchSection.style.cssText = "grid-column: 1 / -1; margin-top: 30px; border-top: 1px dashed var(--border); padding-top: 24px;";
-    
-    liveSearchSection.innerHTML = `
-      <div style="text-align: center; margin-bottom: 20px;">
-        <span style="font-family:'Space Mono', monospace; font-size:12px; color:var(--accent-2); background:rgba(61,220,172,0.1); padding:4px 12px; border-radius:999px;">🤖 LIVE SMART SEARCH DETECTED</span>
-        <h3 style="font-size:16px; margin-top:8px; color:var(--text);">Putar Langsung "${sanitizeText(searchQuery)}" dari YouTube:</h3>
-      </div>
-      <div style="background: var(--card); border:1px solid var(--accent); border-radius:14px; padding:15px; display:flex; flex-direction:column; gap:12px; max-width:600px; margin: 0 auto; box-shadow: 0 8px 32px rgba(124,106,247,0.15);">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-          <div>
-            <p style="font-weight:600; color:#fff;">🎬 Hasil Putar Otomatis: ${sanitizeText(searchQuery)}</p>
-            <p style="font-size:12px; color:var(--subtle);">Mencari trek teratas dan memutar instan di web</p>
-          </div>
-          <button class="btn-primary" style="padding:8px 14px; font-size:12px;" onclick="playInstantFromYoutube('${sanitizeText(searchQuery)}')">▶ Putar Sekarang</button>
-        </div>
-        <div style="border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:flex-end;">
-          <button class="btn-ghost" style="font-size:11px; border-color:var(--accent-2); color:var(--accent-2); padding:5px 10px;" onclick="autoAddSearchedSong('${sanitizeText(searchQuery)}')">➕ Masukkan ke Database</button>
-        </div>
-      </div>
-    `;
-    playlistGrid.appendChild(liveSearchSection);
+  // 2. Jika sedang mencari, gambarkan langsung hasil pencarian langsung dari Server Luar Web
+  if (searchQuery && externalSearchResults.length > 0) {
+    const sectionDivider = document.createElement('div');
+    sectionDivider.style.cssText = "grid-column: 1 / -1; margin-top: 25px; border-top: 1px dashed var(--border); padding-top: 20px; text-align:center;";
+    sectionDivider.innerHTML = `<span style="font-family:'Space Mono',monospace; font-size:11px; color:var(--accent); background:rgba(124,106,247,0.1); padding:4px 14px; border-radius:999px;">🌍 HASIL PENCARIAN REAL-TIME DARI LUAR WEB</span>`;
+    playlistGrid.appendChild(sectionDivider);
+
+    // Render kartu hasil scrapping luar web secara mulus
+    externalSearchResults.forEach(extSong => {
+      playlistGrid.appendChild(buildCard(extSong));
+    });
   }
 }
 
-window.playInstantFromYoutube = function(query) {
-  playerTitle.textContent = query;
-  playerArtist.textContent = "Live YouTube Stream";
+// Fungsi putar langsung musik eksternal luar web
+window.playExternalDirect = function(youtubeUrl, title) {
+  playerTitle.textContent = title;
+  playerArtist.textContent = "External Server Source";
   miniPlayer.hidden = false;
-  // Menampilkan live stream search embed yang langsung aktif
-  playerFrameContainer.innerHTML = `<iframe src="https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  let videoId = youtubeUrl.split('v=')[1];
+  playerFrameContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 };
 
-window.autoAddSearchedSong = function(query) {
+// Fungsi mencatat instan lagu luar web ke formulir pendaftaran
+window.quickAddFromExternal = function(title, artist, youtubeUrl) {
   openFormModal();
-  const parts = query.split('-');
-  if(parts.length > 1) {
-    fArtist.value = parts[0].trim(); fTitle.value = parts[1].trim();
-  } else {
-    fTitle.value = query;
-  }
-  fYoutube.value = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}`;
-  showToast("📋 Data live pencarian berhasil dimasukkan!");
+  fTitle.value = title;
+  fArtist.value = artist;
+  fYoutube.value = youtubeUrl;
+  showToast("📋 Lagu luar berhasil disalin ke Form Tambah!");
 };
 
 function runLivePlayer(song) {
@@ -322,12 +351,7 @@ function runLivePlayer(song) {
   if (yLink) {
     let videoId = '';
     if (yLink.includes('v=')) videoId = yLink.split('v=')[1]?.split('&')[0];
-    else if (yLink.includes('embed?list') || yLink.includes('embed/')) {
-      playerFrameContainer.innerHTML = `<iframe src="${yLink.includes('autoplay') ? yLink : yLink + '&autoplay=1'}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-      return;
-    } else {
-      videoId = yLink.split('/').pop()?.split('?')[0];
-    }
+    else videoId = yLink.split('/').pop()?.split('?')[0];
     
     if (videoId) {
       playerFrameContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
@@ -494,8 +518,25 @@ importFile.onchange = (e) => {
   reader.readAsText(file);
 };
 
-searchInput.oninput = (e) => { searchQuery = e.target.value; clearSearch.hidden = !searchQuery; renderAll(); };
-clearSearch.onclick = () => { searchQuery = ''; searchInput.value = ''; clearSearch.hidden = true; renderAll(); };
+// ── SISTEM DETEKSI DAN TIMEOUT KETIKAN BIAR TIDAK LAG ──
+searchInput.oninput = (e) => { 
+  searchQuery = e.target.value; 
+  clearSearch.hidden = !searchQuery; 
+  renderAll(); 
+
+  // Menambahkan sistem "Debounce" agar web tidak lag saat mengetik cepat
+  clearTimeout(searchTimeout);
+  if (searchQuery.trim().length >= 2) {
+    searchTimeout = setTimeout(() => {
+      fetchFromExternalServer(searchQuery);
+    }, 600); // Menunggu 0.6 detik setelah selesai mengetik, baru server luar ditembak
+  } else {
+    externalSearchResults = [];
+    renderAll();
+  }
+};
+
+clearSearch.onclick = () => { searchQuery = ''; searchInput.value = ''; clearSearch.hidden = true; externalSearchResults = []; renderAll(); };
 sortBtn.onclick = (e) => { e.stopPropagation(); sortPanelOpen = !sortPanelOpen; sortOptions.hidden = !sortPanelOpen; };
 document.onclick = () => { if (sortPanelOpen) { sortPanelOpen = false; sortOptions.hidden = true; } };
 sortOptions.querySelectorAll('.sort-opt').forEach(btn => {
