@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (COMPLETE HYBRID)
+   AMZ LIAN — Playlist  ·  script.js (ALL PLATFORMS FIX)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
@@ -62,6 +62,8 @@ const fTags          = document.getElementById('fTags');
 const fYoutube       = document.getElementById('fYoutube');
 const fYoutubeMusic  = document.getElementById('fYoutubeMusic');
 const fSpotify       = document.getElementById('fSpotify');
+const fAppleMusic    = document.getElementById('fAppleMusic');
+const fSoundcloud    = document.getElementById('fSoundcloud');
 
 // Mini Player Elements
 const miniPlayer = document.getElementById('miniPlayer');
@@ -69,6 +71,14 @@ const playerTitle = document.getElementById('playerTitle');
 const playerArtist = document.getElementById('playerArtist');
 const playerFrameContainer = document.getElementById('playerFrameContainer');
 const closePlayer = document.getElementById('closePlayer');
+
+const PLATFORMS_CONFIG = [
+  { key: 'youtube', label: 'YouTube', icon: `<svg viewBox="0 0 24 24" fill="#FF0000" style="width:16px;height:16px;"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>` },
+  { key: 'youtubeMusic', label: 'YouTube Music', icon: `<svg viewBox="0 0 24 24" fill="#FF0000" style="width:16px;height:16px;"><circle cx="12" cy="12" r="11" fill="#FF0000"/><path d="M12 6.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zm-.5 2.5h1v4.5l3.5 2-.5.87-4-2.37V9z" fill="#fff"/></svg>` },
+  { key: 'spotify', label: 'Spotify', icon: `<svg viewBox="0 0 24 24" fill="#1DB954" style="width:16px;height:16px;"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.5 17.3c-.2.3-.6.4-.9.2-2.6-1.6-5.8-1.9-9.6-1.1-.4.1-.7-.2-.8-.6-.1-.4.2-.7.6-.8 4.2-.9 7.7-.5 10.6 1.3.3.3.4.7.1 1zm1.5-3.3c-.3.4-.8.5-1.2.2-2.9-1.8-7.4-2.3-10.9-1.3-.4.1-.9-.1-1-.5-.1-.4.1-.9.5-1 4-.1 9 .5 12.3 2.5.4.1.5.7.3 1.1zm.1-3.4c-3.5-2.1-9.4-2.3-12.7-1.3-.5.2-1-.1-1.2-.6-.2-.5.1-1 .6-1.2 3.9-1.2 10.3-.9 14.4 1.5.5.3.6.9.4 1.4-.3.5-.9.6-1.5.2z"/></svg>` },
+  { key: 'appleMusic', label: 'Apple Music', icon: `<svg viewBox="0 0 24 24" fill="#FC3C44" style="width:16px;height:16px;"><path d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.5 17.5h-2.833v-3.667c0-2-.834-2.5-1.917-2.5-1.083 0-1.75.833-1.75 2.5V17.5H8.167V10.5H11v1.25c.333-.667 1.25-1.5 2.75-1.5 1.833 0 3.75 1.083 3.75 4.25V17.5zm-9.334 0H5.333V10.5h2.833V17.5zm-1.416-8.334a1.583 1.583 0 110-3.166 1.583 1.583 0 010 3.166z"/></svg>` },
+  { key: 'soundcloud', label: 'SoundCloud', icon: `<svg viewBox="0 0 24 24" fill="#FF5500" style="width:16px;height:16px;"><path d="M1.18 17.36c0 .75.61 1.36 1.37 1.36a1.37 1.37 0 001.37-1.36v-5.94a1.37 1.37 0 00-1.37-1.36 1.37 1.37 0 00-1.37 1.36v5.94zm18.1-7.1a7.5 7.5 0 00-6.24-3.35c-.44 0-.88.04-1.3.12V4.76a1.37 1.37 0 00-2.74 0v12.6c0 .75.61 1.36 1.37 1.36h.02c.16 0 .32-.03.48-.08a7.5 7.5 0 003.41.82c4.14 0 7.5-3.35 7.5-7.5a7.5 7.5 0 00-2.5-5.7z"/></svg>` }
+];
 
 function sanitizeText(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
 function showToast(msg) {
@@ -187,7 +197,6 @@ function renderAll() {
   list.forEach(song => playlistGrid.appendChild(buildCard(song)));
 }
 
-// ── Sistem Live Mini Player Otomatis ──
 function runLivePlayer(song) {
   playerTitle.textContent = song.title;
   playerArtist.textContent = song.artist;
@@ -224,7 +233,6 @@ closePlayer.onclick = () => {
   playerFrameContainer.innerHTML = '';
 };
 
-// ── Modals & Actions ──
 function openDetailModal(id) {
   const song = songs.find(s => s.id === id);
   if (!song) return;
@@ -240,12 +248,12 @@ function openDetailModal(id) {
 
   detailPlatforms.innerHTML = '';
   if (song.links) {
-    Object.keys(song.links).forEach(key => {
-      if (song.links[key]) {
+    PLATFORMS_CONFIG.forEach(p => {
+      if (song.links[p.key]) {
         const btn = document.createElement('button');
         btn.className = 'platform-btn';
-        btn.textContent = key.toUpperCase();
-        btn.onclick = () => window.open(song.links[key], '_blank');
+        btn.innerHTML = `${p.icon} <span>${p.label}</span>`;
+        btn.onclick = () => window.open(song.links[p.key], '_blank');
         detailPlatforms.appendChild(btn);
       }
     });
@@ -284,10 +292,11 @@ function openFormModal(id = null) {
     fTitle.value = song.title; fArtist.value = song.artist; fCover.value = song.cover || '';
     fTags.value = (song.tags || []).join(', ');
     fYoutube.value = song.links?.youtube || ''; fYoutubeMusic.value = song.links?.youtubeMusic || ''; fSpotify.value = song.links?.spotify || '';
+    fAppleMusic.value = song.links?.appleMusic || ''; fSoundcloud.value = song.links?.soundcloud || '';
   } else {
     editingSongId = null;
     formTitle.textContent = 'Tambah Lagu';
-    [fTitle, fArtist, fCover, fTags, fYoutube, fYoutubeMusic, fSpotify].forEach(el => el.value = '');
+    [fTitle, fArtist, fCover, fTags, fYoutube, fYoutubeMusic, fSpotify, fAppleMusic, fSoundcloud].forEach(el => el.value = '');
   }
   formOverlay.hidden = false;
 }
@@ -298,7 +307,13 @@ formSaveBtn.onclick = () => {
   const title = fTitle.value.trim(), artist = fArtist.value.trim();
   if(!title || !artist) { formError.textContent = "Judul dan Artis wajib diisi!"; formError.hidden = false; return; }
 
-  const links = { youtube: fYoutube.value.trim(), youtubeMusic: fYoutubeMusic.value.trim(), spotify: fSpotify.value.trim() };
+  const links = { 
+    youtube: fYoutube.value.trim(), 
+    youtubeMusic: fYoutubeMusic.value.trim(), 
+    spotify: fSpotify.value.trim(),
+    appleMusic: fAppleMusic.value.trim(),
+    soundcloud: fSoundcloud.value.trim()
+  };
   const tags = fTags.value.split(',').map(t => t.trim()).filter(Boolean);
 
   if (editingSongId) {
@@ -310,7 +325,7 @@ formSaveBtn.onclick = () => {
   saveLocalData(); renderAll(); formOverlay.hidden = true;
 };
 
-// ── Impor / Ekspor Playlist ──
+// Impor / Ekspor Playlist
 exportBtn.onclick = () => {
   if (localSongs.length === 0) { showToast("Playlist lokal kosong!"); return; }
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localSongs));
