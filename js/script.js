@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (UNIVERSAL SEARCH HUB)
+   AMZ LIAN — Playlist  ·  script.js (BACK BUTTON FIX)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
@@ -23,7 +23,7 @@ const PINNED_OFFICIAL_KEY = 'amzLianPlaylist_PinnedOfficial';
 const DEFAULT_DATA_URL = 'data/songs.json';
 const COVER_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%23181d2a%27/%3E%3Ctext x=%2750%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E';
 
-const ADMIN_PASSWORD = "amzlianrahasia"; // Ganti dengan password pilihanmu!
+const ADMIN_PASSWORD = "amzlian"; // Ganti dengan password pilihanmu!
 
 let officialSongs = []; 
 let cloudSongs = [];    
@@ -103,6 +103,29 @@ function showToast(msg) {
   toastTimer = setTimeout(() => { toast.hidden = true; }, 2500);
 }
 
+// ── SISTEM PROTEKSI TOMBOL BACK HP (HISTORY API) ──
+function closeModalsUI() {
+  detailOverlay.hidden = true;
+  formOverlay.hidden = true;
+}
+
+// Fungsi ini dipanggil jika pengguna klik tombol silang "X" di web
+function closeModalsWithBack() {
+  closeModalsUI();
+  // Membersihkan state history palsu agar tidak menumpuk
+  if (window.history.state && window.history.state.modal) {
+    window.history.back();
+  }
+}
+
+// Menangkap event saat pengguna menekan tombol BACK di hardware HP
+window.addEventListener('popstate', (e) => {
+  // Jika mundur ke state awal (bukan modal), tutup semua jendela tanpa keluar dari web
+  if (!e.state || !e.state.modal) {
+    closeModalsUI();
+  }
+});
+
 async function loadData() {
   try { pinnedOfficialIds = JSON.parse(localStorage.getItem(PINNED_OFFICIAL_KEY)) || []; } catch { pinnedOfficialIds = []; }
   try { localSongs = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || []; } catch { localSongs = []; }
@@ -175,7 +198,6 @@ function renderTagChips() {
   });
 }
 
-// ── FETCH DATA & BUAT LINK PENCARIAN UNTUK SEMUA PLATFORM ──
 async function fetchFromExternalServer(query) {
   if (!query || query.trim().length < 2) { externalSearchResults = []; renderAll(); return; }
   
@@ -195,7 +217,6 @@ async function fetchFromExternalServer(query) {
         cover: highResCover,
         isExternal: true, 
         links: {
-          // Membuat link pintar untuk mencari otomatis di platform masing-masing
           ytMusicSearch: `https://music.youtube.com/search?q=${searchStr}`,
           spotifySearch: `https://open.spotify.com/search/${searchStr}`,
           appleMusicSearch: `https://music.apple.com/search?term=${searchStr}`,
@@ -253,7 +274,6 @@ function buildCard(song) {
 
   const dropdown = card.querySelector(`#dropdown-${song.id}`);
 
-  // Menu Dropdown untuk Lagu dari Internet (Cari Link)
   if (song.isExternal) {
     const searchLinks = [
       { label: 'YouTube Music', url: song.links.ytMusicSearch, icon: PLATFORMS_CONFIG.find(p=>p.key==='youtubeMusic').icon },
@@ -281,9 +301,7 @@ function buildCard(song) {
       }
     });
 
-  } 
-  // Menu Dropdown untuk Lagu yang Sudah Dicatat (Putar Langsung)
-  else {
+  } else {
     const optDirect = document.createElement('button');
     optDirect.className = 'dropdown-opt dropdown-opt-main';
     optDirect.innerHTML = `⚡ Putar Langsung`;
@@ -384,7 +402,6 @@ searchInput.oninput = (e) => {
 
 clearSearch.onclick = () => { searchQuery = ''; searchInput.value = ''; clearSearch.hidden = true; externalSearchResults = []; renderAll(); };
 
-// ── FUNGSI PINTAR: CATAT LAGU KE FORMULIR ──
 window.quickAddFromExternal = function(title, artist, coverUrl) {
   openFormModal();
   fTitle.value = title;
@@ -454,7 +471,7 @@ function openDetailModal(id) {
   mainPlayBtn.style.width = '100%';
   mainPlayBtn.style.marginBottom = '12px';
   mainPlayBtn.innerHTML = `⚡ <span>Putar Langsung di Web</span>`;
-  mainPlayBtn.onclick = () => { runLivePlayer(song); detailOverlay.hidden = true; };
+  mainPlayBtn.onclick = () => { runLivePlayer(song); closeModalsWithBack(); };
   detailPlatforms.appendChild(mainPlayBtn);
 
   if (song.links) {
@@ -476,20 +493,34 @@ function openDetailModal(id) {
 
   detailPinBtn.textContent = song.pinned ? '⭐ Unpin' : '☆ Favorit';
   detailOverlay.hidden = false;
+
+  // Menambahkan state history saat modal Detail terbuka
+  if (!window.history.state || window.history.state.modal !== 'detail') {
+    window.history.pushState({ modal: 'detail' }, "");
+  }
 }
 
-detailClose.onclick = () => detailOverlay.hidden = true;
-detailEditBtn.onclick = () => { detailOverlay.hidden = true; openFormModal(currentSongId); };
+detailClose.onclick = () => closeModalsWithBack();
+
+detailEditBtn.onclick = () => { 
+  detailOverlay.hidden = true; 
+  // Ganti state history agar saat ditekan back, langsung ke halaman utama
+  if (window.history.state && window.history.state.modal === 'detail') {
+    window.history.replaceState({ modal: 'form' }, "");
+  }
+  openFormModal(currentSongId); 
+};
+
 detailDeleteBtn.onclick = () => { 
   const song = songs.find(s => s.id === currentSongId);
   if (song.isCloud) {
     const pass = prompt("Masukkan Password Pemilik untuk menghapus dari Publik:");
     if (pass !== ADMIN_PASSWORD) { alert("❌ Password salah! Akses ditolak."); return; }
-    db.ref('songs/' + currentSongId).remove().then(() => { showToast("🗑️ Lagu dihapus dari Cloud!"); detailOverlay.hidden = true; });
+    db.ref('songs/' + currentSongId).remove().then(() => { showToast("🗑️ Lagu dihapus dari Cloud!"); closeModalsWithBack(); });
   } else {
     if(confirm("Hapus lagu ini dari playlist pribadi?")) {
       localSongs = localSongs.filter(s => s.id !== currentSongId);
-      saveLocalData(); combineAndRender(); detailOverlay.hidden = true;
+      saveLocalData(); combineAndRender(); closeModalsWithBack();
     }
   }
 };
@@ -501,7 +532,7 @@ detailPinBtn.onclick = () => {
     if (song.pinned) pinnedOfficialIds.push(song.id);
     else pinnedOfficialIds = pinnedOfficialIds.filter(id => id !== song.id);
   }
-  saveLocalData(); combineAndRender(); detailOverlay.hidden = true;
+  saveLocalData(); combineAndRender(); closeModalsWithBack();
 };
 
 function updateCoverPreview(url) { if(url) { coverPreview.src = url; coverPreview.hidden = false; } else { coverPreview.hidden = true; } }
@@ -525,12 +556,18 @@ function openFormModal(id = null) {
     updateCoverPreview('');
   }
   formOverlay.hidden = false;
+
+  // Menambahkan state history saat modal Form terbuka
+  if (!window.history.state || window.history.state.modal !== 'form') {
+    window.history.pushState({ modal: 'form' }, "");
+  }
 }
 
 fCover.oninput = () => updateCoverPreview(fCover.value);
 
-formClose.onclick = () => formOverlay.hidden = true;
-formCancelBtn.onclick = () => formOverlay.hidden = true;
+formClose.onclick = () => closeModalsWithBack();
+formCancelBtn.onclick = () => closeModalsWithBack();
+
 formSaveBtn.onclick = () => {
   const title = fTitle.value.trim(), artist = fArtist.value.trim();
   if(!title || !artist) { formError.textContent = "Judul dan Artis wajib diisi!"; formError.hidden = false; return; }
@@ -564,7 +601,7 @@ formSaveBtn.onclick = () => {
     alert("Pilihan tidak valid!"); return;
   }
 
-  saveLocalData(); combineAndRender(); formOverlay.hidden = true;
+  saveLocalData(); combineAndRender(); closeModalsWithBack();
 };
 
 exportBtn.onclick = () => {
