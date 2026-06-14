@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMZ LIAN — Playlist</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-prefix">AMZ</span><span class="brand-suffix">LIAN</span>
+        <span class="brand-label">Playlist</span>
+      </div>
+      <div class="header-controls">
+        <input id="searchInput" type="text" class="search-input" placeholder="🔍 Cari lagu atau artis…" />
+        <div class="header-actions">
+          <button id="addBtn" class="btn-primary">+ Tambah Lagu (Lokal)</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <main class="playlist-grid" id="playlistGrid"></main>
+
+  <div class="empty-state" id="emptyState" hidden>
+    <p class="empty-title">Playlist kosong</p>
+    <p class="empty-sub">Tunggu admin menambahkan lagu atau tambah lagumu sendiri!</p>
+  </div>
+
+  <!-- PEMUTAR MUSIK LANGSUNG (MINI PLAYER) -->
+  <div id="miniPlayer" class="mini-player" hidden>
+    <div class="player-info">
+      <img id="playerCover" src="" alt="Cover" />
+      <div>
+        <h4 id="playerTitle">Judul Lagu</h4>
+        <p id="playerArtist">Artis</p>
+      </div>
+    </div>
+    <div id="playerFrameContainer" class="player-frame">
+      <!-- Iframe Spotify/YouTube akan muncul di sini -->
+    </div>
+    <button id="closePlayer" class="btn-danger" style="border-radius: 50%; width: 40px; height: 40px;">X</button>
+  </div>
+
+  <!-- MODAL FORM TAMBAH LAGU -->
+  <div class="modal-overlay" id="formOverlay" hidden>
+    <div class="modal modal-form">
+      <button class="modal-close" id="formClose">✕</button>
+      <h2 class="form-title">Tambah Lagu (Lokal)</h2>
+      <p style="font-size: 12px; color: #8b93b4; margin-bottom: 15px;">Lagu ini hanya tersimpan di perangkatmu sendiri.</p>
+      <div class="form-body">
+        <input id="fTitle" type="text" class="form-input" placeholder="Judul Lagu *" />
+        <input id="fArtist" type="text" class="form-input" placeholder="Artis *" />
+        <input id="fCover" type="url" class="form-input" placeholder="URL Foto Cover" />
+        <input id="fYoutube" type="url" class="form-input" placeholder="Link YouTube (Wajib isi salah satu) *" />
+        <input id="fSpotify" type="url" class="form-input" placeholder="Link Spotify (Wajib isi salah satu) *" />
+        <div class="form-footer">
+          <button class="btn-primary" id="formSaveBtn" style="width: 100%;">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
