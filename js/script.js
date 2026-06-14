@@ -138,17 +138,35 @@ function saveLocalData() {
 
 function getFilteredSorted() {
   let list = [...songs];
-  if (activeTag) list = list.filter(s => (s.tags || []).map(t => t.toLowerCase()).includes(activeTag.toLowerCase()));
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
-    list = list.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+  
+  // 1. Filter berdasarkan Tag Chips jika ada yang aktif
+  if (activeTag) {
+    list = list.filter(s => (s.tags || []).map(t => t.toLowerCase()).includes(activeTag.toLowerCase()));
   }
+  
+  // 2. SISTEM PENCARIAN SENSITIF DAN PINTAR (TOKENISASI)
+  if (searchQuery) {
+    // Pecah input pencarian menjadi kata-kata kecil, hilangkan spasi kosong
+    const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    
+    list = list.filter(s => {
+      const title = (s.title || '').toLowerCase();
+      const artist = (s.artist || '').toLowerCase();
+      
+      // Semua kata yang diketik harus ditemukan di dalam Judul ATAU Artis
+      return searchWords.every(word => title.includes(word) || artist.includes(word));
+    });
+  }
+  
+  // 3. Sistem Pengurutan (Sorting)
   if (sortMode === 'newest') list.sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
   else if (sortMode === 'titleAZ') list.sort((a, b) => a.title.localeCompare(b.title));
   else if (sortMode === 'artistAZ') list.sort((a, b) => a.artist.localeCompare(b.artist));
   else if (sortMode === 'pinned') list.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  
   return list;
 }
+
 
 function renderTagChips() {
   const allTags = [...new Set(songs.flatMap(s => s.tags || []))].sort();
