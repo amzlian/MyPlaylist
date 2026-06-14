@@ -1,10 +1,24 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (CARD DROPDOWN FIX)
+   AMZ LIAN — Playlist  ·  script.js (FIREBASE LIVE)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
 
-const LOCAL_STORAGE_KEY = 'amzLianPlaylist_LocalSongs';
+// ── CONNECT TO FIREBASE DATABASE ──
+const firebaseConfig = {
+  apiKey: "AIzaSyAUrKFV1gKd92Pmhum6s8gqVC2hi91JbHo",
+  authDomain: "myplaylist-2a387.firebaseapp.com",
+  databaseURL: "https://myplaylist-2a387-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "myplaylist-2a387",
+  storageBucket: "myplaylist-2a387.firebasestorage.app",
+  messagingSenderId: "889161528054",
+  appId: "1:889161528054:web:9a8e59fac0607b4f8732d7"
+};
+
+// Inisialisasi Firebase secara aman
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 const PINNED_OFFICIAL_KEY = 'amzLianPlaylist_PinnedOfficial';
 const DEFAULT_DATA_URL = 'data/songs.json';
 const COVER_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%23181d2a%27/%3E%3Ctext x=%2750%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E';
@@ -87,9 +101,9 @@ function showToast(msg) {
 }
 
 async function loadData() {
-  try { localSongs = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || []; } catch { localSongs = []; }
   try { pinnedOfficialIds = JSON.parse(localStorage.getItem(PINNED_OFFICIAL_KEY)) || []; } catch { pinnedOfficialIds = []; }
 
+  // 1. Ambil playlist resmi dari file json lokal
   try {
     const res = await fetch(`${DEFAULT_DATA_URL}?t=${new Date().getTime()}`);
     if (res.ok) {
@@ -102,13 +116,26 @@ async function loadData() {
     }
   } catch (e) { console.warn("Gagal mengambil playlist resmi.", e); }
 
-  songs = [...officialSongs, ...localSongs];
+  // 2. TERHUBUNG LIVE KE DATABASE CLOUD FIREBASE
+  db.ref('songs').on('value', (snapshot) => {
+    const data = snapshot.val();
+    localSongs = [];
+    if (data) {
+      Object.keys(data).forEach(key => {
+        localSongs.push({
+          id: key, 
+          ...data[key],
+          pinned: pinnedOfficialIds.includes(key)
+        });
+      });
+    }
+    songs = [...officialSongs, ...localSongs];
+    renderAll();
+  });
 }
 
 function saveLocalData() {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localSongs));
   localStorage.setItem(PINNED_OFFICIAL_KEY, JSON.stringify(pinnedOfficialIds));
-  songs = [...officialSongs, ...localSongs];
 }
 
 function getFilteredSorted() {
@@ -150,7 +177,7 @@ function buildCard(song) {
   const hasCover = song.cover && song.cover.trim();
   const badgeHtml = song.isOfficial 
     ? `<span class="card-tag" style="background:rgba(61, 220, 172, 0.15); color:var(--accent-2);">🌐 AMZ LIAN</span>`
-    : `<span class="card-tag" style="background:rgba(255, 255, 255, 0.1); color:#ccc;">👤 Lokal</span>`;
+    : `<span class="card-tag" style="background:rgba(255, 255, 255, 0.1); color:#ccc;">👤 Publik</span>`;
 
   card.innerHTML = `
     <div class="card-cover-wrap">
@@ -174,39 +201,33 @@ function buildCard(song) {
     </div>
   `;
 
-  // Bangun Isi Konten Pilihan Dropdown secara Dinamis
   const dropdown = card.querySelector(`#dropdown-${song.id}`);
   
-  // Opsi 1: Putar Langsung di Web
   const optDirect = document.createElement('button');
   optDirect.className = 'dropdown-opt dropdown-opt-main';
   optDirect.innerHTML = `⚡ Putar Langsung`;
   optDirect.onclick = (e) => { e.stopPropagation(); runLivePlayer(song); dropdown.hidden = true; };
   dropdown.appendChild(optDirect);
 
-  // Opsi Tambahan: Berdasarkan link platform yang diisi
   if (song.links) {
     PLATFORMS_CONFIG.forEach(p => {
       if (song.links[p.key]) {
-        const optPlat = document.createElement('button');
-        optPlat.className = 'dropdown-opt';
-        optPlat.innerHTML = `${p.icon} Ke ${p.label}`;
-        optPlat.onclick = (e) => { e.stopPropagation(); window.open(song.links[p.key], '_blank'); dropdown.hidden = true; };
-        dropdown.appendChild(optPlat);
+        const btnOpt = document.createElement('button');
+        btnOpt.className = 'dropdown-opt';
+        btnOpt.innerHTML = `${p.icon} Ke ${p.label}`;
+        btnOpt.onclick = (e) => { e.stopPropagation(); window.open(song.links[p.key], '_blank'); dropdown.hidden = true; };
+        dropdown.appendChild(btnOpt);
       }
     });
   }
 
-  // Event Listener Interaksi Klik Kartu
   card.addEventListener('click', (e) => {
     const btnPlay = e.target.closest('[data-action="toggle-menu"]');
     if (btnPlay) {
       e.stopPropagation();
-      // Tutup semua dropdown lain yang sedang terbuka
       document.querySelectorAll('.player-dropdown').forEach(d => { if(d !== dropdown) d.hidden = true; });
       dropdown.hidden = !dropdown.hidden;
     } else {
-      // Jika mengklik area kartu lain, tetap buka modal detail seperti biasa
       dropdown.hidden = true;
       openDetailModal(song.id);
     }
@@ -215,7 +236,6 @@ function buildCard(song) {
   return card;
 }
 
-// Menutup menu dropdown jika pengguna mengklik sembarang tempat di luar area kartu
 document.addEventListener('click', () => {
   document.querySelectorAll('.player-dropdown').forEach(d => d.hidden = true);
 });
@@ -235,7 +255,6 @@ function renderAll() {
   list.forEach(song => playlistGrid.appendChild(buildCard(song)));
 }
 
-// ── Sistem Live Mini Player Otomatis ──
 function runLivePlayer(song) {
   playerTitle.textContent = song.title;
   playerArtist.textContent = song.artist;
@@ -245,7 +264,7 @@ function runLivePlayer(song) {
   const sLink = song.links?.spotify || '';
   const yLink = song.links?.youtube || song.links?.youtubeMusic || '';
 
-  if (sLink && sLink.includes('http://googleusercontent.com/spotify.com/5')) {
+  if (sLink && sLink.includes('spotify.com')) {
     const trackId = sLink.split('track/')[1]?.split('?')[0];
     if (trackId) {
       playerFrameContainer.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0" allow="encrypted-media; autoplay"></iframe>`;
@@ -264,7 +283,7 @@ function runLivePlayer(song) {
     }
   }
 
-  playerFrameContainer.innerHTML = `<p style="color:var(--danger); font-size:12px; text-align:center; padding-top:30px;">Link tidak didukung pemutar langsung.</p>`;
+  playerFrameContainer.innerHTML = `<p style="color:var(--danger); font-size:12px; text-align:center; padding-top:30px;">Platform tidak didukung pemutar langsung.</p>`;
 }
 
 closePlayer.onclick = () => {
@@ -283,9 +302,21 @@ function openDetailModal(id) {
 
   detailTags.innerHTML = song.isOfficial 
     ? `<span class="detail-tag" style="background:var(--accent-2); color:#000;">🌐 Official AMZ LIAN</span>`
-    : `<span class="detail-tag" style="background:#555; color:#fff;">👤 Lokal</span>`;
+    : `<span class="detail-tag" style="background:#555; color:#fff;">👤 Playlist Publik</span>`;
 
   detailPlatforms.innerHTML = '';
+  
+  const mainPlayBtn = document.createElement('button');
+  mainPlayBtn.className = 'platform-btn';
+  mainPlayBtn.style.background = 'var(--accent)';
+  mainPlayBtn.style.borderColor = 'var(--accent)';
+  mainPlayBtn.style.color = '#fff';
+  mainPlayBtn.style.width = '100%';
+  mainPlayBtn.style.marginBottom = '12px';
+  mainPlayBtn.innerHTML = `⚡ <span>Putar Langsung di Web</span>`;
+  mainPlayBtn.onclick = () => { runLivePlayer(song); detailOverlay.hidden = true; };
+  detailPlatforms.appendChild(mainPlayBtn);
+
   if (song.links) {
     PLATFORMS_CONFIG.forEach(p => {
       if (song.links[p.key]) {
@@ -300,6 +331,7 @@ function openDetailModal(id) {
     });
   }
 
+  // Cek hak akses hapus (hanya lagu non-official/dari cloud yang bisa dihapus di web)
   if (song.isOfficial) {
     detailEditBtn.hidden = true; detailDeleteBtn.hidden = true;
   } else {
@@ -312,7 +344,13 @@ function openDetailModal(id) {
 
 detailClose.onclick = () => detailOverlay.hidden = true;
 detailEditBtn.onclick = () => { detailOverlay.hidden = true; openFormModal(currentSongId); };
-detailDeleteBtn.onclick = () => { if(confirm("Hapus lagu ini?")) { localSongs = localSongs.filter(s => s.id !== currentSongId); saveLocalData(); renderAll(); detailOverlay.hidden = true; } };
+detailDeleteBtn.onclick = () => { 
+  if(confirm("Hapus lagu ini dari database cloud publik?")) { 
+    db.ref('songs/' + currentSongId).remove()
+      .then(() => { showToast("🗑️ Lagu berhasil dihapus!"); detailOverlay.hidden = true; });
+  } 
+};
+
 detailPinBtn.onclick = () => {
   const song = songs.find(s => s.id === currentSongId);
   song.pinned = !song.pinned;
@@ -358,21 +396,23 @@ formSaveBtn.onclick = () => {
   const tags = fTags.value.split(',').map(t => t.trim()).filter(Boolean);
 
   if (editingSongId) {
-    const idx = localSongs.findIndex(s => s.id === editingSongId);
-    if(idx !== -1) localSongs[idx] = { ...localSongs[idx], title, artist, cover: fCover.value.trim(), tags, links };
+    db.ref('songs/' + editingSongId).update({ title, artist, cover: fCover.value.trim(), tags, links })
+      .then(() => showToast("✅ Lagu diperbarui di Cloud!"));
   } else {
-    localSongs.unshift({ id: 'local-' + Date.now(), title, artist, cover: fCover.value.trim(), tags, links, addedAt: new Date().toISOString() });
+    db.ref('songs').push({
+      title, artist, cover: fCover.value.trim(), tags, links, addedAt: new Date().toISOString()
+    }).then(() => showToast("🚀 Berhasil upload lagu ke Cloud!"));
   }
-  saveLocalData(); renderAll(); formOverlay.hidden = true;
+  saveLocalData(); formOverlay.hidden = true;
 };
 
-// Impor / Ekspor Playlist
+// Backup fitur ekspor & impor cadangan
 exportBtn.onclick = () => {
-  if (localSongs.length === 0) { showToast("Playlist lokal kosong!"); return; }
+  if (localSongs.length === 0) { showToast("Playlist cloud kosong!"); return; }
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localSongs));
   const downloadAnchor = document.createElement('a');
   downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", "my_playlist.json");
+  downloadAnchor.setAttribute("download", "cloud_backup.json");
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
@@ -385,8 +425,8 @@ importFile.onchange = (e) => {
     try {
       const parsed = JSON.parse(evt.target.result);
       if (Array.isArray(parsed)) {
-        localSongs = [...parsed, ...localSongs];
-        saveLocalData(); renderAll(); showToast("✅ Playlist Berhasil Diimport!");
+        parsed.forEach(s => db.ref('songs').push(s));
+        showToast("✅ Playlist Masuk Cloud!");
       }
     } catch { showToast("❌ File JSON tidak valid!"); }
   };
