@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (SMART SEARCH & AUTO ADD)
+   AMZ LIAN — Playlist  ·  script.js (LIVE SEARCH FIX)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
@@ -138,35 +138,23 @@ function saveLocalData() {
 
 function getFilteredSorted() {
   let list = [...songs];
-  
-  // 1. Filter berdasarkan Tag Chips jika ada yang aktif
   if (activeTag) {
     list = list.filter(s => (s.tags || []).map(t => t.toLowerCase()).includes(activeTag.toLowerCase()));
   }
-  
-  // 2. SISTEM PENCARIAN SENSITIF DAN PINTAR (TOKENISASI)
   if (searchQuery) {
-    // Pecah input pencarian menjadi kata-kata kecil, hilangkan spasi kosong
     const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
-    
     list = list.filter(s => {
       const title = (s.title || '').toLowerCase();
       const artist = (s.artist || '').toLowerCase();
-      
-      // Semua kata yang diketik harus ditemukan di dalam Judul ATAU Artis
       return searchWords.every(word => title.includes(word) || artist.includes(word));
     });
   }
-  
-  // 3. Sistem Pengurutan (Sorting)
   if (sortMode === 'newest') list.sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
   else if (sortMode === 'titleAZ') list.sort((a, b) => a.title.localeCompare(b.title));
   else if (sortMode === 'artistAZ') list.sort((a, b) => a.artist.localeCompare(b.artist));
   else if (sortMode === 'pinned') list.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-  
   return list;
 }
-
 
 function renderTagChips() {
   const allTags = [...new Set(songs.flatMap(s => s.tags || []))].sort();
@@ -255,7 +243,7 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.player-dropdown').forEach(d => d.hidden = true);
 });
 
-// ── RENDER ALL & LOGIKA PENCARIAN MANDIRI ──
+// ── RENDER LIVE PENCARIAN MANDIRI OTOMATIS ──
 function renderAll() {
   renderTagChips();
   const list = getFilteredSorted();
@@ -264,46 +252,54 @@ function renderAll() {
   if (songs.length === 0 && !searchQuery) { emptyState.hidden = false; return; }
   emptyState.hidden = true;
 
-  if (list.length === 0 && searchQuery) {
-    // JALUR PENCARIAN INTERAKTIF JIKA LAGU TIDAK ADA DI LIST
-    playlistGrid.innerHTML = `
-      <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 40px 20px;">
-        <strong>🔍 "${sanitizeText(searchQuery)}" Tidak Ditemukan</strong>
-        <p style="color: var(--subtle); font-size:13px; margin-bottom: 15px;">Lagu ini belum terdaftar di database.</p>
-        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-          <button class="btn-primary" onclick="playInstantFromYoutube('${sanitizeText(searchQuery)}')">▶ Putar Langsung via YouTube</button>
-          <button class="btn-ghost" style="border-color:var(--accent-2); color:var(--accent-2);" onclick="autoAddSearchedSong('${sanitizeText(searchQuery)}')">➕ Daftarkan Lagu Ini</button>
+  // Jika ada lagu di playlist yang cocok, gambar kartunya dulu
+  list.forEach(song => playlistGrid.appendChild(buildCard(song)));
+
+  // JALUR REKOMENDASI LIVE OTOMATIS SAAT USER MENGETIK DAN LAGU TIDAK COCOK ATAU TERBATAS
+  if (searchQuery && searchQuery.trim().length > 1) {
+    const liveSearchSection = document.createElement('div');
+    liveSearchSection.style.cssText = "grid-column: 1 / -1; margin-top: 30px; border-top: 1px dashed var(--border); padding-top: 24px;";
+    
+    liveSearchSection.innerHTML = `
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span style="font-family:'Space Mono', monospace; font-size:12px; color:var(--accent-2); background:rgba(61,220,172,0.1); padding:4px 12px; border-radius:999px;">🤖 LIVE SMART SEARCH DETECTED</span>
+        <h3 style="font-size:16px; margin-top:8px; color:var(--text);">Putar Langsung "${sanitizeText(searchQuery)}" dari YouTube:</h3>
+      </div>
+      <div style="background: var(--card); border:1px solid var(--accent); border-radius:14px; padding:15px; display:flex; flex-direction:column; gap:12px; max-width:600px; margin: 0 auto; box-shadow: 0 8px 32px rgba(124,106,247,0.15);">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <p style="font-weight:600; color:#fff;">🎬 Hasil Putar Otomatis: ${sanitizeText(searchQuery)}</p>
+            <p style="font-size:12px; color:var(--subtle);">Mencari trek teratas dan memutar instan di web</p>
+          </div>
+          <button class="btn-primary" style="padding:8px 14px; font-size:12px;" onclick="playInstantFromYoutube('${sanitizeText(searchQuery)}')">▶ Putar Sekarang</button>
+        </div>
+        <div style="border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:flex-end;">
+          <button class="btn-ghost" style="font-size:11px; border-color:var(--accent-2); color:var(--accent-2); padding:5px 10px;" onclick="autoAddSearchedSong('${sanitizeText(searchQuery)}')">➕ Masukkan ke Database</button>
         </div>
       </div>
     `;
-    return;
+    playlistGrid.appendChild(liveSearchSection);
   }
-  list.forEach(song => playlistGrid.appendChild(buildCard(song)));
 }
 
-// Fungsi Putar Otomatis Lagu Hasil Pencarian dari YouTube Luas
 window.playInstantFromYoutube = function(query) {
   playerTitle.textContent = query;
-  playerArtist.textContent = "YouTube Smart Search";
+  playerArtist.textContent = "Live YouTube Stream";
   miniPlayer.hidden = false;
-  // Memanfaatkan pemutar pencarian otomatis query duckduckgo/youtube tanpa API Key
+  // Menampilkan live stream search embed yang langsung aktif
   playerFrameContainer.innerHTML = `<iframe src="https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 };
 
-// Fungsi Memasukkan Otomatis Lagu yang Dicari ke Dalam Form Tambah
 window.autoAddSearchedSong = function(query) {
   openFormModal();
-  // Memecah keyword pencarian otomatis menjadi Judul (jika mengetik pakai spasi/strip)
   const parts = query.split('-');
   if(parts.length > 1) {
-    fArtist.value = parts[0].trim();
-    fTitle.value = parts[1].trim();
+    fArtist.value = parts[0].trim(); fTitle.value = parts[1].trim();
   } else {
     fTitle.value = query;
   }
-  // Otomatis membuatkan link pencarian YouTube instan agar pengguna tidak repot copas link
   fYoutube.value = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}`;
-  showToast("📋 Data pencarian berhasil dimasukkan ke form!");
+  showToast("📋 Data live pencarian berhasil dimasukkan!");
 };
 
 function runLivePlayer(song) {
@@ -326,9 +322,8 @@ function runLivePlayer(song) {
   if (yLink) {
     let videoId = '';
     if (yLink.includes('v=')) videoId = yLink.split('v=')[1]?.split('&')[0];
-    else if (yLink.includes('embed?list')) {
-      // Jalur khusus hasil auto add search
-      playerFrameContainer.innerHTML = `<iframe src="${yLink}&autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    else if (yLink.includes('embed?list') || yLink.includes('embed/')) {
+      playerFrameContainer.innerHTML = `<iframe src="${yLink.includes('autoplay') ? yLink : yLink + '&autoplay=1'}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
       return;
     } else {
       videoId = yLink.split('/').pop()?.split('?')[0];
