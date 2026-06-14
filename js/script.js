@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (AUTOFILL ALL LINKS)
+   AMZ LIAN — Playlist  ·  script.js (AUDIO PREVIEW ENGINE)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
@@ -101,10 +101,7 @@ const PLATFORMS_CONFIG = [
 ];
 
 function sanitizeText(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-function showToast(msg) {
-  clearTimeout(toastTimer); toast.textContent = msg; toast.hidden = false;
-  toastTimer = setTimeout(() => { toast.hidden = true; }, 2500);
-}
+function showToast(msg) { clearTimeout(toastTimer); toast.textContent = msg; toast.hidden = false; toastTimer = setTimeout(() => { toast.hidden = true; }, 2500); }
 
 function closeModalsUI() { detailOverlay.hidden = true; formOverlay.hidden = true; }
 function closeModalsWithBack() { closeModalsUI(); if (window.history.state && window.history.state.modal) window.history.back(); }
@@ -172,7 +169,9 @@ async function fetchFromExternalServer(query) {
       let highResCover = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '300x300bb') : '';
       const searchStr = encodeURIComponent(item.trackName + ' ' + item.artistName);
       return {
-        id: `ext-${item.trackId}`, title: item.trackName, artist: item.artistName, cover: highResCover, isExternal: true, 
+        id: `ext-${item.trackId}`, title: item.trackName, artist: item.artistName, cover: highResCover, 
+        isExternal: true, 
+        previewUrl: item.previewUrl, // ⚡ Simpan Preview Audio Asli
         links: {
           ytMusicSearch: `https://music.youtube.com/search?q=${searchStr}`,
           spotifySearch: `https://open.spotify.com/search/${searchStr}`,
@@ -185,13 +184,11 @@ async function fetchFromExternalServer(query) {
   } catch (error) { console.error(error); }
 }
 
-// ── ⚡ FUNGSI AUTOFILL FORM (MENGISI LINK OTOMATIS) ──
 async function fetchForFormAutofill(query) {
   if (!query || query.trim().length < 2) { fAutoSearchResults.innerHTML = ''; return; }
   try {
     const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=5`);
-    if (!response.ok) return;
-    const data = await response.json();
+    if (!response.ok) return; const data = await response.json();
     fAutoSearchResults.innerHTML = '';
     
     if(data.results.length === 0) {
@@ -213,24 +210,21 @@ async function fetchForFormAutofill(query) {
       row.onmouseleave = () => row.style.background = "var(--card)";
       
       row.onclick = () => {
-        // Isi Judul, Artis, dan Cover
         fTitle.value = item.trackName;
         fArtist.value = item.artistName;
         fCover.value = highResCover;
         updateCoverPreview(highResCover);
         
-        // ⚡ MENGISI SEMUA KOLOM LINK SECARA OTOMATIS!
         const searchStr = encodeURIComponent(item.trackName + ' ' + item.artistName);
-        
-        // Buat link YouTube jadi pemutar otomatis
-        fYoutube.value = `https://www.youtube.com/embed?listType=search&list=${searchStr}&autoplay=1`;
+        // Link yang diisi sekarang adalah link pencarian resmi yang NORMAL (bukan iframe rusak)
+        fYoutube.value = `https://www.youtube.com/results?search_query=${searchStr}`;
         fYoutubeMusic.value = `https://music.youtube.com/search?q=${searchStr}`;
         fSpotify.value = `https://open.spotify.com/search/${searchStr}`;
         fAppleMusic.value = item.trackViewUrl || `https://music.apple.com/search?term=${searchStr}`;
         fSoundcloud.value = `https://soundcloud.com/search?q=${searchStr}`;
 
         fAutoSearch.value = ''; fAutoSearchResults.innerHTML = '';
-        showToast("⚡ Keren! Judul, cover, & semua link sudah terisi otomatis!");
+        showToast("⚡ Data terisi! (Preview Audio akan otomatis aktif untuk lagu ini)");
       };
       fAutoSearchResults.appendChild(row);
     });
@@ -258,7 +252,7 @@ function buildCard(song) {
       <div class="card-actions" style="margin-top:auto; display:flex; gap:6px;">
         ${song.isExternal 
           ? `<button class="card-btn card-btn-play" data-action="toggle-ext-menu" style="flex:1; background:var(--accent); font-size:11px;">🔍 Cari Link...</button>
-             <button class="card-btn" style="padding:0 8px; font-size:11px; border:1px solid var(--accent-2); color:var(--accent-2);" onclick="event.stopPropagation(); quickAddFromExternal('${sanitizeText(song.title).replace(/'/g, "\\'")}', '${sanitizeText(song.artist).replace(/'/g, "\\'")}', '${song.cover}')">➕ Catat</button>`
+             <button class="card-btn" style="padding:0 8px; font-size:11px; border:1px solid var(--accent-2); color:var(--accent-2);" onclick="event.stopPropagation(); quickAddFromExternal('${sanitizeText(song.title).replace(/'/g, "\\'")}', '${sanitizeText(song.artist).replace(/'/g, "\\'")}', '${song.cover}', '${song.previewUrl}')">➕ Catat</button>`
           : `<button class="card-btn card-btn-play" data-action="toggle-menu" style="width:100%;">▶ Putar Musik</button>`}
         <div class="player-dropdown" id="dropdown-${song.id}" hidden></div>
       </div>
@@ -278,6 +272,14 @@ function buildCard(song) {
       const btnOpt = document.createElement('button'); btnOpt.className = 'dropdown-opt'; btnOpt.innerHTML = `${sl.icon} Cari di ${sl.label}`;
       btnOpt.onclick = (e) => { e.stopPropagation(); window.open(sl.url, '_blank'); dropdown.hidden = true; }; dropdown.appendChild(btnOpt);
     });
+    
+    // Tambah tombol Preview Audio instan untuk lagu dari luar
+    const btnPreview = document.createElement('button');
+    btnPreview.className = 'dropdown-opt dropdown-opt-main';
+    btnPreview.innerHTML = `🎵 Preview Audio (30 dtk)`;
+    btnPreview.onclick = (e) => { e.stopPropagation(); runLivePlayer(song); dropdown.hidden = true; };
+    dropdown.appendChild(btnPreview);
+
     card.addEventListener('click', (e) => {
       const btnExt = e.target.closest('[data-action="toggle-ext-menu"]');
       if (btnExt) { e.stopPropagation(); document.querySelectorAll('.player-dropdown').forEach(d => { if(d !== dropdown) d.hidden = true; }); dropdown.hidden = !dropdown.hidden; } 
@@ -327,7 +329,7 @@ function renderAll() {
     const sectionDivider = document.createElement('div'); sectionDivider.style.cssText = "grid-column: 1 / -1; margin-top: 35px; border-top: 2px dashed var(--border); padding-top: 20px; text-align:center;";
     sectionDivider.innerHTML = `
       <span style="font-family:'Space Mono',monospace; font-size:12px; color:var(--accent); background:rgba(124,106,247,0.15); padding:6px 16px; border-radius:999px;">🌍 REKOMENDASI DARI INTERNET</span>
-      <p style="margin-top:10px; font-size:13px; color:var(--text-dim);">Klik <b>Cari Link...</b> untuk membuka pencarian di tab baru, atau klik <b>Catat</b> untuk menyimpan otomatis.</p>
+      <p style="margin-top:10px; font-size:13px; color:var(--text-dim);">Klik <b>Cari Link...</b> lalu <b>Preview Audio</b> untuk mendengarkan, atau klik <b>Catat</b> untuk menyimpan!</p>
     `;
     playlistGrid.appendChild(sectionDivider);
     externalSearchResults.forEach(extSong => playlistGrid.appendChild(buildCard(extSong)));
@@ -348,13 +350,12 @@ fAutoSearch.oninput = (e) => {
   else { fAutoSearchResults.innerHTML = ''; }
 };
 
-// ── KLIK CATAT DARI PENCARIAN LUAR: ISI SEMUA LINK OTOMATIS! ──
 window.quickAddFromExternal = function(title, artist, coverUrl) {
   openFormModal();
   fTitle.value = title; fArtist.value = artist; fCover.value = coverUrl; updateCoverPreview(coverUrl);
   
   const searchStr = encodeURIComponent(title + ' ' + artist);
-  fYoutube.value = `https://www.youtube.com/embed?listType=search&list=${searchStr}&autoplay=1`;
+  fYoutube.value = `https://www.youtube.com/results?search_query=${searchStr}`;
   fYoutubeMusic.value = `https://music.youtube.com/search?q=${searchStr}`;
   fSpotify.value = `https://open.spotify.com/search/${searchStr}`;
   fAppleMusic.value = `https://music.apple.com/search?term=${searchStr}`;
@@ -363,23 +364,61 @@ window.quickAddFromExternal = function(title, artist, coverUrl) {
   showToast("📋 Semua data & link terisi otomatis! Siap disimpan!");
 };
 
+// ── ⚡ ENGINE PLAYER AUDIO ANTI-BLOKIR ──
 function runLivePlayer(song) {
-  playerTitle.textContent = song.title; playerArtist.textContent = song.artist; miniPlayer.hidden = false; playerFrameContainer.innerHTML = '';
-  const sLink = song.links?.spotify || ''; const yLink = song.links?.youtube || song.links?.youtubeMusic || '';
+  playerTitle.textContent = song.title; playerArtist.textContent = song.artist; miniPlayer.hidden = false; 
+  playerFrameContainer.innerHTML = `<p style="color:var(--subtle); font-size:12px; text-align:center; padding-top:30px;">Memuat pemutar musik...</p>`;
 
-  if (sLink && sLink.includes('spotify.com')) {
-    const trackId = sLink.split('track/')[1]?.split('?')[0];
-    if (trackId) { playerFrameContainer.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0" allow="encrypted-media; autoplay"></iframe>`; return; }
+  // 1. Coba putar Spotify Asli jika link berupa ID track yang valid
+  const sLink = song.links?.spotify || '';
+  let sTrackId = '';
+  if (sLink.includes('track/')) sTrackId = sLink.split('track/')[1].split('?')[0];
+
+  if (sTrackId) {
+    playerFrameContainer.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${sTrackId}?utm_source=generator&theme=0" allow="encrypted-media; autoplay" style="border:none; width:100%; height:100%;"></iframe>`;
+    return;
   }
-  if (yLink) {
-    let videoId = '';
-    if (yLink.includes('v=')) videoId = yLink.split('v=')[1]?.split('&')[0];
-    else if (yLink.includes('embed?list')) { playerFrameContainer.innerHTML = `<iframe src="${yLink}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`; return; }
-    else videoId = yLink.split('/').pop()?.split('?')[0];
-    
-    if (videoId) { playerFrameContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`; return; }
+
+  // 2. Coba putar YouTube Asli jika link berupa ID Video yang valid (bukan hasil link autofill otomatis)
+  const yLink = song.links?.youtube || song.links?.youtubeMusic || '';
+  let yVideoId = '';
+  if (yLink.includes('v=')) yVideoId = yLink.split('v=')[1].split('&')[0];
+  else if (yLink.includes('youtu.be/')) yVideoId = yLink.split('youtu.be/')[1].split('?')[0];
+  else if (!yLink.includes('search_query') && !yLink.includes('search?q') && yLink.includes('embed/')) yVideoId = yLink.split('embed/')[1].split('?')[0];
+
+  if (yVideoId) {
+    playerFrameContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${yVideoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen style="border:none; width:100%; height:100%;"></iframe>`;
+    return;
   }
-  playerFrameContainer.innerHTML = `<p style="color:var(--danger); font-size:12px; text-align:center; padding-top:30px;">Format link tidak dikenali / kosong.</p>`;
+
+  // 3. JIKA LINK HASIL AUTOFILL / TIDAK ADA ID VIDEO: GUNAKAN AUDIO PREVIEW (ANTI-BLOKIR)
+  const renderAudioPlayer = (url) => {
+    playerFrameContainer.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:0 15px; background:#111;">
+        <span style="font-size:11px; color:var(--accent-2); margin-bottom:8px; font-weight:600;">🎵 Preview Audio Langsung</span>
+        <audio controls autoplay style="width:100%; height:40px; outline:none; border-radius:30px;">
+          <source src="${url}" type="audio/mp4">
+        </audio>
+      </div>
+    `;
+  };
+
+  // Jika lagu berasal dari pencarian luar, langsung mainkan preview yang tersimpan
+  if (song.previewUrl) {
+    renderAudioPlayer(song.previewUrl);
+  } else {
+    // Jika lagu ada di database tapi belum ada previewnya, cari instan ke server Apple Music
+    const query = encodeURIComponent(song.title + ' ' + song.artist);
+    fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+          renderAudioPlayer(data.results[0].previewUrl);
+        } else {
+          playerFrameContainer.innerHTML = `<p style="color:var(--danger); font-size:12px; text-align:center; padding-top:30px;">Preview lagu tidak tersedia.</p>`;
+        }
+      }).catch(() => { playerFrameContainer.innerHTML = `<p style="color:var(--danger); font-size:12px; text-align:center; padding-top:30px;">Gagal memuat preview.</p>`; });
+  }
 }
 
 closePlayer.onclick = () => { miniPlayer.hidden = true; playerFrameContainer.innerHTML = ''; };
