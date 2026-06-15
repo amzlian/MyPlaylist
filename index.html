@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -24,11 +24,11 @@
             <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" stroke-width="1.5"/>
             <path d="M13 13L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
-          <input id="searchInput" type="text" class="search-input" placeholder="Cari lagu resmi atau lagumu…" autocomplete="off" />
+          <input id="searchInput" type="text" class="search-input" placeholder="Search official or your songs..." autocomplete="off" />
           <button id="clearSearch" class="clear-btn" aria-label="Clear search" hidden>✕</button>
         </div>
         <div class="header-actions">
-          <button id="sortBtn" class="btn-icon" title="Urutkan">
+          <button id="sortBtn" class="btn-icon" title="Sort">
             <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M5 10h10M7 15h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </button>
           <button id="importBtn" class="btn-icon" title="Import Playlist">
@@ -39,7 +39,7 @@
           </button>
           <button id="addBtn" class="btn-primary">
             <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            Tambah Lagu
+            Add Song
           </button>
         </div>
       </div>
@@ -48,13 +48,13 @@
     <div class="filter-bar" id="filterBar">
       <div class="filter-inner">
         <div class="tag-chips" id="tagChips">
-          <button class="chip active" data-tag="">Semua</button>
+          <button class="chip active" data-tag="">All</button>
         </div>
         <div class="sort-options" id="sortOptions" hidden>
-          <button class="sort-opt active" data-sort="newest">Terbaru</button>
-          <button class="sort-opt" data-sort="titleAZ">Judul A–Z</button>
-          <button class="sort-opt" data-sort="artistAZ">Artis A–Z</button>
-          <button class="sort-opt" data-sort="pinned">Favorit Dulu</button>
+          <button class="sort-opt active" data-sort="newest">Newest</button>
+          <button class="sort-opt" data-sort="titleAZ">Title A–Z</button>
+          <button class="sort-opt" data-sort="artistAZ">Artist A–Z</button>
+          <button class="sort-opt" data-sort="pinned">Favorites First</button>
         </div>
       </div>
     </div>
@@ -64,16 +64,16 @@
 
   <div class="empty-state" id="emptyState" hidden>
     <div class="empty-icon">🎵</div>
-    <p class="empty-title">Playlist kosong</p>
-    <p class="empty-sub">Tambahkan lagu pertamamu!</p>
-    <button class="btn-primary" onclick="document.getElementById('addBtn').click()">+ Tambah Lagu</button>
+    <p class="empty-title">Playlist is empty</p>
+    <p class="empty-sub">Add your first track!</p>
+    <button class="btn-primary" onclick="document.getElementById('addBtn').click()">+ Add Song</button>
   </div>
 
   <input type="file" id="importFile" accept=".json" style="display:none" />
 
   <div class="modal-overlay" id="detailOverlay" hidden>
     <div class="modal modal-detail" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-      <button class="modal-close" id="detailClose" aria-label="Tutup">✕</button>
+      <button class="modal-close" id="detailClose" aria-label="Close">✕</button>
       <div class="detail-cover-wrap">
         <img id="detailCover" src="" alt="" class="detail-cover" />
       </div>
@@ -87,7 +87,7 @@
         
         <div class="detail-actions">
           <button class="btn-ghost" id="detailEditBtn">✏️ Edit</button>
-          <button class="btn-danger" id="detailDeleteBtn">🗑 Hapus</button>
+          <button class="btn-danger" id="detailDeleteBtn">🗑 Delete</button>
           <button class="btn-pin" id="detailPinBtn"></button>
         </div>
       </div>
@@ -96,29 +96,28 @@
 
   <div class="modal-overlay" id="formOverlay" hidden>
     <div class="modal modal-form" id="formModal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
-      <button class="modal-close" id="formClose" aria-label="Tutup">✕</button>
-      <h2 id="formTitle" class="form-title">Tambah Lagu</h2>
+      <button class="modal-close" id="formClose" aria-label="Close">✕</button>
+      <h2 id="formTitle" class="form-title">Add Song</h2>
       <div class="form-body">
         <div class="form-row" style="margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 15px;">
-          <label class="form-label" style="color:var(--accent-2); display:flex; align-items:center; gap:4px;">⚡ Cari Otomatis dari Internet <span class="form-hint">(Klik untuk isi otomatis)</span></label>
-          <input id="fAutoSearch" type="text" class="form-input" style="border-color:var(--accent-2)" placeholder="Ketik judul lagu / artis di sini untuk mengisi data..." autocomplete="off" />
+          <label class="form-label" style="color:var(--accent-2); display:flex; align-items:center; gap:4px;">⚡ Smart Search <span class="form-hint">(Click to auto-fill)</span></label>
+          <input id="fAutoSearch" type="text" class="form-input" style="border-color:var(--accent-2)" placeholder="Type song title / artist..." autocomplete="off" />
           <div id="fAutoSearchResults" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; max-height:180px; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px;"></div>
         </div>
-        ```
-      <div class="form-body">
+        
         <div class="form-row">
-          <label class="form-label" for="fTitle">Judul Lagu <span class="req">*</span></label>
+          <label class="form-label" for="fTitle">Song Title <span class="req">*</span></label>
           <input id="fTitle" type="text" class="form-input" placeholder="e.g. Blinding Lights" />
         </div>
         <div class="form-row">
-          <label class="form-label" for="fArtist">Artis <span class="req">*</span></label>
+          <label class="form-label" for="fArtist">Artist <span class="req">*</span></label>
           <input id="fArtist" type="text" class="form-input" placeholder="e.g. The Weeknd" />
         </div>
         <div class="form-row">
-          <label class="form-label" for="fCover">URL Cover / Upload Gambar</label>
+          <label class="form-label" for="fCover">Cover URL / Upload Image</label>
           <div class="cover-input-group">
             <input id="fCover" type="text" class="form-input" placeholder="https://..." />
-            <label class="btn-ghost upload-label" title="Upload gambar lokal">
+            <label class="btn-ghost upload-label" title="Upload local image">
               📁
               <input type="file" id="fCoverFile" accept="image/*" style="display:none" />
             </label>
@@ -128,24 +127,18 @@
           </div>
         </div>
         <div class="form-row">
-          <label class="form-label" for="fTags">Tags <span class="form-hint">(pisahkan dengan koma)</span></label>
-          <input id="fTags" type="text" class="form-input" placeholder="pop, favorit, lo-fi" />
+          <label class="form-label" id="fTagsLabel" for="fTags">Folders / Tags <span class="form-hint">(comma separated)</span></label>
+          <input id="fTags" type="text" class="form-input" placeholder="pop, favorite, lo-fi" />
         </div>
 
-                <div class="platform-section">
-          <p class="form-label">Link Platform <span class="req">*</span> <span class="form-hint">(min. 1 diisi)</span></p>
+        <div class="platform-section">
+          <p class="form-label">Platform Links <span class="req">*</span> <span class="form-hint">(min. 1 required)</span></p>
           <div class="platform-inputs">
-            <div class="platform-input-row">
-              <span class="platform-icon-label">
-                <svg viewBox="0 0 24 24" class="plat-icon" fill="#FF0000"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
-                YouTube
-              </span>
-              <input id="fYoutube" type="url" class="form-input" placeholder="https://youtube.com/watch?v=…" />
-            </div>
+            
             <div class="platform-input-row">
               <span class="platform-icon-label">
                 <svg viewBox="0 0 24 24" class="plat-icon" fill="#FF0000"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm-9-5.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zm-.5 2.5h1v4.5l3.5 2-.5.87-4-2.37V9z" fill="#fff"/></svg>
-                YouTube Music
+                YT Music
               </span>
               <input id="fYoutubeMusic" type="url" class="form-input" placeholder="https://music.youtube.com/watch?v=…" />
             </div>
@@ -175,8 +168,8 @@
 
         <div class="form-error" id="formError" hidden></div>
         <div class="form-footer">
-          <button class="btn-ghost" id="formCancelBtn">Batal</button>
-          <button class="btn-primary" id="formSaveBtn">Simpan</button>
+          <button class="btn-ghost" id="formCancelBtn">Cancel</button>
+          <button class="btn-primary" id="formSaveBtn">Save</button>
         </div>
       </div>
     </div>
@@ -184,8 +177,8 @@
 
   <div id="miniPlayer" class="mini-player" hidden>
     <div class="player-info">
-      <div id="playerTitle" style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Judul</div>
-      <div id="playerArtist" style="font-size:12px; color:var(--subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Artis</div>
+      <div id="playerTitle" style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Title</div>
+      <div id="playerArtist" style="font-size:12px; color:var(--subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Artist</div>
     </div>
     <div id="playerFrameContainer" class="player-frame"></div>
     <button id="closePlayer" class="btn-close-player">✕</button>
@@ -195,11 +188,6 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-
-  <script src="js/script.js"></script>
-</body>
-</html>
-
 
   <script src="js/script.js"></script>
 </body>
