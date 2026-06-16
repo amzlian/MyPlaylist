@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (PERFECT SORTING & LAYERING)
+   AMZ LIAN — Playlist  ·  features.js (ADVANCED FOLDER PRO ENGINE)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! All-in-One Navigation, Newest First & Dark Modal Active.");
+console.log("⚡ features.js loaded! Advanced Folder Management & Access Controls Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -119,7 +119,7 @@ if (formSaveBtn) {
       const title = fTitle ? fTitle.value.trim() : '';
       const artist = fArtist ? fArtist.value.trim() : '';
       if (!title || !artist) {
-        if (formError) { formError.textContent = "Title and Artist are required!"; formError.hidden = false; }
+        if (formError) { fError.textContent = "Title and Artist are required!"; formError.hidden = false; }
         return null;
       }
       const links = {
@@ -164,7 +164,7 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. SISTEM POP-UP MODAL CUSTOM (DARK MODE PREMIUM) - ANTI PROMPT JADUL ──
+// ── 4. POP-UP MODAL CUSTOM DENGAN KONTROL AKSES (PRIVAT / PUBLIK) ──
 function showCustomFolderModal(callback) {
   const oldModal = document.getElementById('customFolderModal');
   if(oldModal) oldModal.remove();
@@ -186,22 +186,26 @@ function showCustomFolderModal(callback) {
   `;
 
   const title = document.createElement('h4');
-  title.style.cssText = "margin: 0; font-size: 15px; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 8px;";
-  title.innerHTML = `📁 Create Custom Folder`;
-
-  const sub = document.createElement('p');
-  sub.style.cssText = "margin: 0; font-size: 11px; color: #8b93b4; line-height: 1.4;";
-  sub.textContent = "Enter a name for your private categorizing playlist folder:";
+  title.style.cssText = "margin: 0; font-size: 15px; color: #fff; font-weight: 700;";
+  title.innerHTML = `📁 Create New Folder`;
 
   const input = document.createElement('input');
   input.type = "text";
-  input.placeholder = "e.g. Chill, Lofi, Slow, Night...";
-  input.style.cssText = `
-    width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px; padding: 12px; color: #fff; font-size: 13px;
-    outline: none; font-family: inherit; box-sizing: border-box;
-  `;
+  input.placeholder = "Folder Name (e.g. Lofi, Chill)...";
+  input.style.cssText = "width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; outline: none; box-sizing: border-box;";
   
+  // OPSI SELECTION AKSES PRIVAT / PUBLIC
+  const accessLabel = document.createElement('label');
+  accessLabel.style.cssText = "font-size: 11px; color: var(--accent-2); font-weight:600;";
+  accessLabel.textContent = "🗺️ Folder Access Status:";
+
+  const selectAccess = document.createElement('select');
+  selectAccess.style.cssText = "width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; cursor: pointer;";
+  selectAccess.innerHTML = `
+    <option value="private">🔒 Private (Local Save Only)</option>
+    <option value="public">👥 Public (Global Cloud Folder)</option>
+  `;
+
   const actionWrap = document.createElement('div');
   actionWrap.style.cssText = "display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;";
 
@@ -212,24 +216,94 @@ function showCustomFolderModal(callback) {
 
   const confirmBtn = document.createElement('button');
   confirmBtn.textContent = "Create";
-  confirmBtn.style.cssText = "background: var(--accent-2); border: none; color: #000; font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,255,200,0.15);";
+  confirmBtn.style.cssText = "background: var(--accent-2); border: none; color: #000; font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 16px; cursor: pointer;";
   
   confirmBtn.onclick = () => {
     const val = input.value.trim();
+    const access = selectAccess.value;
     overlay.remove();
-    if(val) callback(val);
+    if(val) callback(val, access);
   };
 
   actionWrap.appendChild(cancelBtn);
   actionWrap.appendChild(confirmBtn);
   box.appendChild(title);
-  box.appendChild(sub);
   box.appendChild(input);
+  box.appendChild(accessLabel);
+  box.appendChild(selectAccess);
   box.appendChild(actionWrap);
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 
   setTimeout(() => input.focus(), 100);
+}
+
+// ── ⚡ FITUR BARU: POP-UP MODAL SELEKSI JALUR CEPAT TAMBAH LAGU KE FOLDER LU ──
+function showQuickAddTracksModal(folderName) {
+  const old = document.getElementById('quickAddModal');
+  if(old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'quickAddModal';
+  overlay.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(5,7,10,0.85); backdrop-filter:blur(15px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; font-family:'Space Mono', monospace;";
+
+  const box = document.createElement('div');
+  box.style.cssText = "background:rgba(16,20,30,0.98); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:24px; width:100%; max-width:400px; max-height:75vh; box-shadow:0 20px 50px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:14px;";
+
+  const title = document.createElement('h4');
+  title.style.cssText = "margin:0; font-size:14px; color:#fff; font-weight:700;";
+  title.textContent = `➕ Add Songs to 📁 ${folderName}`;
+
+  const listWrap = document.createElement('div');
+  listWrap.style.cssText = "flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; max-height:45vh;";
+
+  // Ambil daftar lagu yang BELUM masuk ke folder ini
+  const availableSongs = songs.filter(s => !s.tags || !s.tags.includes(folderName));
+
+  if(availableSongs.length === 0) {
+    listWrap.innerHTML = `<div style="font-size:11px; color:#6b7394; text-align:center; padding:20px;">All existing songs are already in this folder.</div>`;
+  } else {
+    availableSongs.forEach(song => {
+      const row = document.createElement('div');
+      row.style.cssText = "display:flex; align-items:center; justify-content:between; background:#0c0f16; border:1px solid rgba(255,255,255,0.03); padding:10px; border-radius:10px; cursor:pointer; transition:0.2s;";
+      row.innerHTML = `
+        <div style="flex:1; min-width:0; padding-right:10px;">
+          <div style="font-size:12px; color:#fff; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.title}</div>
+          <div style="font-size:11px; color:#6b7394; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.artist}</div>
+        </div>
+        <button style="background:var(--accent); border:none; color:#000; font-size:11px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer;">+ ADD</button>
+      `;
+      row.onclick = () => {
+        // Jika Lagu berasal dari Public (Cloud / Firebase)
+        if (!song.isLocal && db) {
+          db.ref('songs/' + song.id).update({ tags: [...(song.tags || []), folderName] });
+        } else {
+          // Jika Lagu berasal dari Private (Local Storage)
+          const idx = localSongs.findIndex(ls => ls.id === song.id);
+          if (idx !== -1) {
+            if(!localSongs[idx].tags) localSongs[idx].tags = [];
+            localSongs[idx].tags.push(folderName);
+            saveLocalData();
+          }
+        }
+        showToast(`✅ Added "${song.title}" to ${folderName}!`);
+        overlay.remove();
+        combineAndRender();
+      };
+      listWrap.appendChild(row);
+    });
+  }
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = "Close Panel";
+  closeBtn.style.cssText = "width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.05); color:#fff; border-radius:8px; padding:10px; font-size:12px; font-weight:600; cursor:pointer; margin-top:4px;";
+  closeBtn.onclick = () => overlay.remove();
+
+  box.appendChild(title);
+  box.appendChild(listWrap);
+  box.appendChild(closeBtn);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
 }
 
 // ── 5. LEBUR FILTER UTAMA DAN CUSTOM FOLDER JADI 1 BARIS HORIZONTAL ──
@@ -290,34 +364,50 @@ window.renderTagChips = function() {
     divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;";
     tagChips.appendChild(divider);
 
-    const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
-    const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
-    const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
+    // Ambil metadata folder kustom terdaftar
+    const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
+    const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
+    const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
 
     totalFolders.forEach(tag => {
+      const meta = createdFoldersData[tag] || { access: 'private' };
+      const prefix = meta.access === 'public' ? '👥' : '📁';
+      
       const btn = document.createElement('button');
       btn.className = `chip${activeTag === tag ? ' active' : ''}`;
       btn.style.setProperty('white-space', 'nowrap', 'important');
-      btn.textContent = `📁 ${tag}`;
+      btn.textContent = `${prefix} ${tag}`;
       btn.onclick = () => { activeTag = tag; renderAll(); };
       tagChips.appendChild(btn);
     });
 
+    // JIKA USER SEDANG MEMBUKA FOLDER KUSTOM, SUNTIK TOMBOL CEPAT JALUR CEPAT `[+]` DI SEBELAHNYA
+    if (activeTag !== '') {
+      const quickAddBtn = document.createElement('button');
+      quickAddBtn.className = 'chip';
+      quickAddBtn.style.cssText = "background: var(--surface) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight:800 !important; white-space:nowrap !important;";
+      quickAddBtn.innerHTML = `[+] Add Song to ${activeTag}`;
+      quickAddBtn.onclick = () => showQuickAddTracksModal(activeTag);
+      tagChips.appendChild(quickAddBtn);
+    }
+
+    // TOMBOL UTAMA BUAT [+ FOLDER] BARU 
     const addFolderBtn = document.createElement('button');
     addFolderBtn.className = 'chip';
     addFolderBtn.style.cssText = "border: 1px dashed var(--accent-2) !important; color: var(--accent-2) !important; font-weight: 700 !important; white-space: nowrap !important;";
     addFolderBtn.innerHTML = `➕ Folder`;
     
     addFolderBtn.onclick = () => {
-      showCustomFolderModal((folderName) => {
-        let customCreatedFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
-        if (!customCreatedFolders.includes(folderName)) {
-          customCreatedFolders.push(folderName);
-          localStorage.setItem('amz_custom_folders', JSON.stringify(customCreatedFolders));
-          showToast(`📁 Folder "${folderName}" created!`);
+      showCustomFolderModal((folderName, access) => {
+        let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
+        if (!customFoldersMeta[folderName]) {
+          // Daftarkan nama folder dan tingkat aksesnya ke memori
+          customFoldersMeta[folderName] = { access: access, createdAt: new Date().toISOString() };
+          localStorage.setItem('amz_folders_meta', JSON.stringify(customFoldersMeta));
+          showToast(`📁 Folder "${folderName}" (${access}) created!`);
           combineAndRender();
         } else {
-          alert("Folder already exists!");
+          alert("Folder name already exists!");
         }
       });
     };
@@ -331,11 +421,11 @@ window.openDetailModal = function(id) {
   if (typeof originalOpenDetailModal === 'function') originalOpenDetailModal(id);
   
   const song = songs.find(s => s.id === id);
-  if (!song || !song.isLocal || !detailPlatforms) return;
+  if (!song || !detailPlatforms) return;
   
-  const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
-  const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
-  const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
+  const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
+  const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
+  const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
 
   const moveFolderContainer = document.createElement('div');
   moveFolderContainer.style.cssText = "margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 8px;";
@@ -364,14 +454,18 @@ window.openDetailModal = function(id) {
     const targetFolder = e.target.value;
     if (!targetFolder) return;
     
-    const localIdx = localSongs.findIndex(s => s.id === song.id);
-    if (localIdx !== -1) {
-      localSongs[localIdx].tags = [targetFolder];
-      saveLocalData();
-      combineAndRender();
-      closeModalsWithBack();
-      showToast(`📦 Moved "${song.title}" to folder ${targetFolder}!`);
+    if (!song.isLocal && db) {
+      db.ref('songs/' + song.id).update({ tags: [targetFolder] });
+    } else {
+      const localIdx = localSongs.findIndex(s => s.id === song.id);
+      if (localIdx !== -1) {
+        localSongs[localIdx].tags = [targetFolder];
+        saveLocalData();
+      }
     }
+    combineAndRender();
+    closeModalsWithBack();
+    showToast(`📦 Moved "${song.title}" to folder ${targetFolder}!`);
   };
 
   moveFolderContainer.appendChild(label);
@@ -379,17 +473,12 @@ window.openDetailModal = function(id) {
   detailPlatforms.appendChild(moveFolderContainer);
 };
 
-// ── 7. ⚡ FIX UTAMA: TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU COLO-COLO PALING ATAS GRID ⚡ ──
+// ── 7. TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU MEJENG PALING ATAS GRID ──
 window.combineAndRender = function() {
   const markedLocal = localSongs.map(s => ({ ...s, isLocal: true, pinned: pinnedOfficialIds.includes(s.id) }));
-  
-  // Kita paksa susun ulang: Urutkan array lagu local & cloud yang paling baru ditambahkan (addedAt tertinggi) 
-  // ditaruh mutlak di paling atas sebelum lagu-lagu official statis bawaan json dibaca.
   const sortedLocalAndCloud = [...cloudSongs, ...markedLocal].sort((a, b) => {
     return new Date(b.addedAt || 0) - new Date(a.addedAt || 0);
   });
-
-  // Gabungkan hasil sorting terbaru di barisan paling atas grid
   songs = [...sortedLocalAndCloud, ...officialSongs];
   renderAll();
 };
