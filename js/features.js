@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (MOBILE RESPONSIVE FIXED)
+   AMZ LIAN — Playlist  ·  features.js (ALL-IN-ONE SWIPABLE HEADER)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! Mobile Header Layout Fixed.");
+console.log("⚡ features.js loaded! All-in-One Swipable Navigation Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -164,88 +164,111 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. ⚡ STRATEGI FIX MOBILE LAYOUT: KUNCI SCROLLBAR HORIZONTAL &TAMPILAN AMAN ⚡ ──
-function injectAddFolderButton() {
-  if (!customFolderTitle || document.getElementById('btnAddCustomFolder')) return;
-  
-  customFolderTitle.style.cssText = "font-size:12px; color:var(--subtle); margin-bottom:8px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; width:100%; padding:0 4px;";
-  customFolderTitle.innerHTML = `<span>📁 Your Custom Folders:</span>`;
-
-  const addFolderBtn = document.createElement('button');
-  addFolderBtn.id = 'btnAddCustomFolder';
-  addFolderBtn.style.cssText = `
-    padding: 4px 10px; border-radius: 8px; font-size: 11px;
-    border: 1px dashed var(--accent-2); background: transparent;
-    color: var(--accent-2); font-weight: 600; cursor: pointer; transition: 0.2s;
-  `;
-  addFolderBtn.innerHTML = `[+ Folder]`;
-  
-  addFolderBtn.onclick = () => {
-    const folderName = prompt("Enter new custom folder name:");
-    if (!folderName || !folderName.trim()) return;
-    
-    let customCreatedFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
-    if (!customCreatedFolders.includes(folderName.trim())) {
-      customCreatedFolders.push(folderName.trim());
-      localStorage.setItem('amz_custom_folders', JSON.stringify(customCreatedFolders));
-      showToast(`📁 Folder "${folderName.trim()}" created!`);
-      if (typeof combineAndRender === 'function') combineAndRender();
-      else renderAll();
-    } else {
-      alert("Folder already exists!");
-    }
-  };
-  customFolderTitle.appendChild(addFolderBtn);
-}
-
+// ── 4. ⚡ MASTERPIECE LEBUR FILTER UTAMA DAN CUSTOM FOLDER JADI 1 BARIS HORIZONTAL + TRIGGER INDICATOR ⚡ ──
 window.renderTagChips = function() {
-  // ⚡ AMANKAN CONTAINER UTAMA (HEADER BAR) SUPAYA OTOMATIS MENYESUAIKAN TINGGI DI HP
+  // Sembunyikan judul teks bwaan agar space layar HP super maksimal
+  if (customFolderTitle) customFolderTitle.style.display = 'none';
+  if (folderBar) folderBar.style.display = 'none'; // Matikan bar menu lama bawaan html
+
   const header = document.querySelector('.site-header');
   if (header) {
     header.style.setProperty('height', 'auto', 'important');
     header.style.setProperty('position', 'sticky', 'important');
   }
 
-  // ⚡ AMANKAN BARISAN CHIPS AGAR BISA DI-SCROLL KE SAMPING (TIDAK MELAR KE BAWAH DI HP)
   if (tagChips) {
+    // 🎨 DESAIN PENAMPUNG NAVIGASI SATU BARIS + EFEK OVERLAP GRADASI DI KANAN SEBAGAI TRIGGER GESER
+    const parent = tagChips.parentNode;
+    if (parent && !document.getElementById('navScrollWrapper')) {
+      const wrapper = document.createElement('div');
+      wrapper.id = 'navScrollWrapper';
+      wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block;";
+      
+      // Efek Fade Shadow di ujung kanan (Tanda/Trigger visual kalau list ini bisa di-swipe)
+      const fadeIndicator = document.createElement('div');
+      fadeIndicator.style.cssText = "position: absolute; right: 0; top: 0; height: 100%; width: 50px; background: linear-gradient(to right, transparent, rgba(10,12,18,0.9)); pointer-events: none; z-index: 10; border-right: 2px solid var(--accent-2);";
+      
+      parent.insertBefore(wrapper, tagChips);
+      wrapper.appendChild(tagChips);
+      wrapper.appendChild(fadeIndicator);
+    }
+
+    // Set style list agar lurus horizontal sempurna dan anti-melar ke bawah
     tagChips.style.cssText = `
       display: flex !important;
       gap: 8px !important;
       overflow-x: auto !important;
       scrollbar-width: none !important;
-      padding-bottom: 4px !important;
+      padding: 6px 40px 6px 4px !important;
       width: 100% !important;
       flex-wrap: nowrap !important;
+      -webkit-overflow-scrolling: touch !important;
     `;
-  }
-
-  const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
-  const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
-  const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
-  
-  if (totalFolders.length > 0 || createdFolders.length > 0) {
-    if(customFolderTitle) customFolderTitle.style.setProperty('display', 'flex', 'important');
-    injectAddFolderButton();
-  } else {
-    if(customFolderTitle) customFolderTitle.style.display = 'none';
-  }
-
-  if (tagChips) {
     tagChips.innerHTML = '';
-    
-    const allBtn = document.createElement('button');
-    allBtn.className = `chip${activeTag === '' ? ' active' : ''}`;
-    allBtn.textContent = 'All Folders';
-    allBtn.onclick = () => { activeTag = ''; renderAll(); };
-    tagChips.appendChild(allBtn);
+
+    // A. SUNTIK LIST FILTER UTAMA (DARI KODINGAN HTML LAMA) KE DALAM BARISAN YANG SAMA
+    const mainFilters = [
+      { id: 'all', label: '🏠 Home', active: activeFolder === 'all' && activeTag === '' },
+      { id: 'public', label: '👥 Public', active: activeFolder === 'public' && activeTag === '' },
+      { id: 'private', label: '🔒 Private', active: activeFolder === 'private' && activeTag === '' },
+      { id: 'favorite', label: '⭐ Favorites', active: activeFolder === 'favorite' && activeTag === '' }
+    ];
+
+    mainFilters.forEach(f => {
+      const btn = document.createElement('button');
+      btn.className = `chip${f.active ? ' active' : ''}`;
+      btn.style.setProperty('white-space', 'nowrap', 'important');
+      btn.innerHTML = f.label;
+      btn.onclick = () => {
+        activeFolder = f.id;
+        activeTag = '';
+        renderAll();
+      };
+      tagChips.appendChild(btn);
+    });
+
+    // Tambahkan Garis Pembatas Neon Kecil Antara Menu Utama dengan List Custom Folder
+    const divider = document.createElement('div');
+    divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;";
+    tagChips.appendChild(divider);
+
+    // B. SUNTIK LIST CUSTOM FOLDER BUATAN USER
+    const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
+    const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
+    const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
 
     totalFolders.forEach(tag => {
       const btn = document.createElement('button');
       btn.className = `chip${activeTag === tag ? ' active' : ''}`;
+      btn.style.setProperty('white-space', 'nowrap', 'important');
       btn.textContent = `📁 ${tag}`;
-      btn.onclick = () => { activeTag = tag; renderAll(); };
+      btn.onclick = () => {
+        activeTag = tag;
+        renderAll();
+      };
       tagChips.appendChild(btn);
     });
+
+    // C. SUNTIK TOMBOL [+ FOLDER] INDEPENDEN DI UJUNG AKHIR BARISAN SCROLL
+    const addFolderBtn = document.createElement('button');
+    addFolderBtn.className = 'chip';
+    addFolderBtn.style.cssText = "border: 1px dashed var(--accent-2) !important; color: var(--accent-2) !important; font-weight: 700 !important; white-space: nowrap !important;";
+    addFolderBtn.innerHTML = `➕ Folder`;
+    addFolderBtn.onclick = () => {
+      const folderName = prompt("Enter new custom folder name:");
+      if (!folderName || !folderName.trim()) return;
+      
+      let customCreatedFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
+      if (!customCreatedFolders.includes(folderName.trim())) {
+        customCreatedFolders.push(folderName.trim());
+        localStorage.setItem('amz_custom_folders', JSON.stringify(customCreatedFolders));
+        showToast(`📁 Folder "${folderName.trim()}" created!`);
+        combineAndRender();
+      } else {
+        alert("Folder already exists!");
+      }
+    };
+    tagChips.appendChild(addFolderBtn);
   }
 };
 
