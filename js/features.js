@@ -1,17 +1,80 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (FINAL PERFECT SWIPABLE ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (YT MUSIC BLUR & SPREAD HOME ENGINE)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! All-in-One Swipable Navigation Active.");
+console.log("⚡ features.js loaded! Glow Logo, Spread Home Menu, & YT Music Adaptive Blur Active.");
 
-// ── 1. TIMPA FUNGSI UTAMA PLAY ──
+// ── 1. TIMPA FUNGSI UTAMA PLAY (DENGAN ENGINE ADAPTIVE BLUR YT MUSIC) ──
 window.runLivePlayer = function(song) {
   const trackList = getFilteredSorted();
   currentQueue = [...trackList];
   currentQueueIndex = currentQueue.findIndex(s => s.id === song.id);
   if(currentQueueIndex === -1) { currentQueue.push(song); currentQueueIndex = currentQueue.length - 1; }
+  
+  // ⚡ ADAPTIVE BLUR ENGINE: Membuat latar belakang blur pekat satu layar penuh mengikuti cover lagu
+  applyYTMusicBlur(song.cover || COVER_PLACEHOLDER);
+  
   playCurrentQueueIndex(); 
 };
+
+// Fungsi Pembuat Background Blur Pekat Dinamis (YouTube Music Style) + Proteksi Cover Putih
+function applyYTMusicBlur(imgUrl) {
+  let bgOverlay = document.getElementById('yt-adaptive-blur-bg');
+  if (!bgOverlay) {
+    bgOverlay = document.createElement('div');
+    bgOverlay.id = 'yt-adaptive-blur-bg';
+    bgOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; transition: background 1.5s ease; filter: blur(80px); opacity: 0.5; pointer-events: none;";
+    document.body.prepend(bgOverlay);
+  }
+  
+  const img = new Image();
+  img.crossOrigin = "Anonymous";
+  img.src = imgUrl;
+  img.onload = function() {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 10; canvas.height = 10;
+      ctx.drawImage(img, 0, 0, 10, 10);
+      const rgba = ctx.getImageData(0, 0, 1, 1).data;
+      
+      const r = rgba[0], g = rgba[1], b = rgba[2];
+      
+      // Update background warna blur pekat
+      bgOverlay.style.background = `rgb(${r}, ${g}, ${b})`;
+      
+      // Hitung tingkat kecerahan warna (Brightness YIQ formula) untuk mendeteksi warna putih/terang
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      
+      // Jika cover dominan putih/terang (brightness > 180), paksa warna teks tombol navigasi jadi gelap agar tetap kelihatan
+      if (brightness > 180) {
+        document.querySelectorAll('.chip').forEach(el => {
+          if(!el.classList.contains('active')) {
+            el.style.setProperty('color', '#000000', 'important');
+            el.style.setProperty('background', 'rgba(0, 0, 0, 0.08)', 'important');
+            el.style.setProperty('border-color', 'rgba(0, 0, 0, 0.2)', 'important');
+          }
+        });
+        document.documentElement.style.setProperty('--accent', `rgb(${Math.max(0, r - 60)}, ${Math.max(0, g - 60)}, ${Math.max(0, b - 60)})`);
+      } else {
+        // Jika cover gelap, kembalikan teks navigasi ke warna putih terang semula
+        document.querySelectorAll('.chip').forEach(el => {
+          if(!el.classList.contains('active')) {
+            el.style.removeProperty('color');
+            el.style.removeProperty('background');
+            el.style.removeProperty('border-color');
+          }
+        });
+        document.documentElement.style.setProperty('--accent', `rgb(${r}, ${g}, ${b})`);
+      }
+      
+      const darkBg = `rgba(${Math.max(0, r - 50)}, ${Math.max(0, g - 50)}, ${Math.max(0, b - 50)}, 0.98)`;
+      document.documentElement.style.setProperty('--background', darkBg);
+    } catch (e) {
+      console.log("Gagal memproses warna blur cover.");
+    }
+  };
+}
 
 // ── 2. TIMPA FUNGSI ANTREAN UTK HANDLING STICKY PLAYER & TOMBOL EXE/STP ──
 window.playCurrentQueueIndex = function() {
@@ -28,17 +91,13 @@ window.playCurrentQueueIndex = function() {
     miniPlayer.hidden = false;
   }
 
-  const formOvl = document.getElementById('formOverlay');
-  if(formOvl) formOvl.style.zIndex = '10000';
-  
-  const detailOvl = document.getElementById('detailOverlay');
-  if(detailOvl) detailOvl.style.zIndex = '10000';
+  const formOvl = document.getElementById('formOverlay'); if(formOvl) formOvl.style.zIndex = '10000';
+  const detailOvl = document.getElementById('detailOverlay'); if(detailOvl) detailOvl.style.zIndex = '10000';
 
   if(playerTitle) playerTitle.textContent = song.title;
   if(playerArtist) playerArtist.textContent = song.artist;
   
-  const pCoverUI = document.getElementById('playerCoverUI');
-  if(pCoverUI) pCoverUI.src = song.cover || COVER_PLACEHOLDER;
+  const pCoverUI = document.getElementById('playerCoverUI'); if(pCoverUI) pCoverUI.src = song.cover || COVER_PLACEHOLDER;
   
   const glow = document.getElementById('bgGlow');
   if(glow) { glow.style.backgroundImage = `url('${song.cover}')`; glow.style.opacity = 0.5; }
@@ -47,11 +106,11 @@ window.playCurrentQueueIndex = function() {
     playerFrameContainer.innerHTML = `
       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; padding:0 15px; font-family:'Space Mono', monospace;">
         <div class="custom-controls" style="display:flex; align-items:center; gap:24px; margin-bottom:10px;">
-          <button id="nxShuffle" title="Shuffle" style="background:none; border:none; color:${isShuffle ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; cursor:pointer;">[SHF]</button>
-          <button id="nxPrev" title="Previous" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">&lt;&lt;|</button>
-          <button id="nxPlay" title="Play/Stop" style="background:#fff; border:none; color:#000; width:38px; height:38px; border-radius:50%; font-size:11px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(255,255,255,0.3); transition:0.2s;">⏳</button>
-          <button id="nxNext" title="Next" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">|&gt;&gt;</button>
-          <button id="nxRepeat" title="Repeat" style="background:none; border:none; color:${isRepeat ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; cursor:pointer;">[RPT]</button>
+          <button id="nxShuffle" style="background:none; border:none; color:${isShuffle ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; cursor:pointer;">[SHF]</button>
+          <button id="nxPrev" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">&lt;&lt;|</button>
+          <button id="nxPlay" style="background:#fff; border:none; color:#000; width:38px; height:38px; border-radius:50%; font-size:11px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(255,255,255,0.3); transition:0.2s;">⏳</button>
+          <button id="nxNext" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">|&gt;&gt;</button>
+          <button id="nxRepeat" style="background:none; border:none; color:${isRepeat ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; cursor:pointer;">[RPT]</button>
         </div>
         <div class="player-progress-container" style="display:flex; align-items:center; gap:12px; width:100%;">
           <span id="nxCurr" style="font-size:11px; color:#6b7394; min-width:35px; text-align:right;">0:00</span>
@@ -61,12 +120,8 @@ window.playCurrentQueueIndex = function() {
       </div>
     `;
 
-    const nPlay = document.getElementById('nxPlay');
-    const nNext = document.getElementById('nxNext');
-    const nPrev = document.getElementById('nxPrev');
-    const nShuffle = document.getElementById('nxShuffle');
-    const nRepeat = document.getElementById('nxRepeat');
-    const nProg = document.getElementById('nxProg');
+    const nPlay = document.getElementById('nxPlay'); const nNext = document.getElementById('nxNext'); const nPrev = document.getElementById('nxPrev');
+    const nShuffle = document.getElementById('nxShuffle'); const nRepeat = document.getElementById('nxRepeat'); const nProg = document.getElementById('nxProg');
     
     nexusAudio.pause(); nexusAudio.src = "";
     
@@ -93,27 +148,16 @@ if (formSaveBtn) {
   if (formFooter) {
     formFooter.innerHTML = `
       <button class="btn-ghost" id="formCancelBtn" style="margin-right:auto;">Cancel</button>
-      <button class="btn-primary" id="btnSavePrivate" style="background: var(--muted); color: #fff; border: 1px solid var(--border);">🔒 Save Private</button>
-      <button class="btn-primary" id="btnSavePublic" style="background: var(--accent); color: #fff;">👥 Save Public</button>
+      <button class="btn-primary" id="btnSavePrivate" style="background: var(--muted); color: #fff; border: 1px solid var(--border);">Save Private</button>
+      <button class="btn-primary" id="btnSavePublic" style="background: var(--accent); color: #fff;">Save Public</button>
     `;
-
-    const newCancel = document.getElementById('formCancelBtn');
-    if (newCancel) newCancel.onclick = () => closeModalsWithBack();
-
-    const btnPrivate = document.getElementById('btnSavePrivate');
-    const btnPublic = document.getElementById('btnSavePublic');
+    const newCancel = document.getElementById('formCancelBtn'); if (newCancel) newCancel.onclick = () => closeModalsWithBack();
+    const btnPrivate = document.getElementById('btnSavePrivate'); const btnPublic = document.getElementById('btnSavePublic');
 
     const validateInputs = () => {
-      const title = fTitle ? fTitle.value.trim() : '';
-      const artist = fArtist ? fArtist.value.trim() : '';
-      if (!title || !artist) {
-        if (formError) { formError.textContent = "Title and Artist are required!"; formError.hidden = false; }
-        return null;
-      }
-      const links = {
-        youtubeMusic: fYoutubeMusic ? fYoutubeMusic.value.trim() : '', spotify: fSpotify ? fSpotify.value.trim() : '',
-        appleMusic: fAppleMusic ? fAppleMusic.value.trim() : '', soundcloud: fSoundcloud ? fSoundcloud.value.trim() : ''
-      };
+      const title = fTitle ? fTitle.value.trim() : ''; const artist = fArtist ? fArtist.value.trim() : '';
+      if (!title || !artist) { if (formError) { formError.textContent = "Title and Artist are required!"; formError.hidden = false; } return null; }
+      const links = { youtubeMusic: fYoutubeMusic ? fYoutubeMusic.value.trim() : '', spotify: fSpotify ? fSpotify.value.trim() : '', appleMusic: fAppleMusic ? fAppleMusic.value.trim() : '', soundcloud: fSoundcloud ? fSoundcloud.value.trim() : '' };
       const tags = fTags ? fTags.value.split(',').map(t => t.trim()).filter(Boolean) : [];
       return { title, artist, links, tags };
     };
@@ -124,25 +168,22 @@ if (formSaveBtn) {
         if (editingSongId) {
           const idx = localSongs.findIndex(s => s.id === editingSongId);
           if (idx !== -1) localSongs[idx] = { ...localSongs[idx], title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links };
-          showToast("🔒 Private song updated!");
+          showToast("Private song updated!");
         } else {
           localSongs.unshift({ id: 'local-' + Date.now(), title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links, addedAt: new Date().toISOString() });
-          showToast("🔒 Saved to custom private folder!");
+          showToast("Saved to custom private folder!");
         }
         saveLocalData(); combineAndRender(); closeModalsWithBack();
       };
     }
-
     if (btnPublic) {
       btnPublic.onclick = () => {
         const data = validateInputs(); if (!data) return;
-        if (!db) { alert("❌ Database Firebase tidak terhubung!"); return; }
+        if (!db) { alert("Database Firebase tidak terhubung!"); return; }
         if (editingSongId) {
-          db.ref('songs/' + editingSongId).update({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links })
-            .then(() => showToast("✅ Public song updated!"));
+          db.ref('songs/' + editingSongId).update({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links }).then(() => showToast("Public song updated!"));
         } else {
-          db.ref('songs').push({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links, addedAt: new Date().toISOString() })
-            .then(() => showToast("🚀 Added to Public Playlist!"));
+          db.ref('songs').push({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links, addedAt: new Date().toISOString() }).then(() => showToast("Added to Public Playlist!"));
         }
         saveLocalData(); combineAndRender(); closeModalsWithBack();
       };
@@ -150,107 +191,83 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. POP-UP MODAL BIKIN FOLDER BARU (FULL DARK MODE PREMIUM - ANTI PROMPT JADUL) ──
+// ── 4. POP-UP MODAL BIKIN FOLDER BARU ──
 function showCustomFolderModal(callback) {
   const oldModal = document.getElementById('customFolderModal'); if(oldModal) oldModal.remove();
-
   const overlay = document.createElement('div'); overlay.id = 'customFolderModal';
   overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(15px); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; font-family: 'Space Mono', monospace;";
-
   const box = document.createElement('div');
   box.style.cssText = "background: rgba(16, 20, 30, 0.98); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 16px;";
-
-  const title = document.createElement('h4'); title.style.cssText = "margin: 0; font-size: 15px; color: #fff; font-weight: 700;"; title.innerHTML = `📁 Create New Folder`;
-
-  const input = document.createElement('input'); input.type = "text"; input.placeholder = "Folder Name (e.g. Lofi, Chill)...";
+  const title = document.createElement('h4'); title.style.cssText = "margin: 0; font-size: 15px; color: #fff; font-weight: 700;"; title.innerHTML = `Create New Folder`;
+  const input = document.createElement('input'); input.type = "text"; input.placeholder = "Folder Name...";
   input.style.cssText = "width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; outline: none; box-sizing: border-box;";
-  
-  const accessLabel = document.createElement('label'); accessLabel.style.cssText = "font-size: 11px; color: var(--accent-2); font-weight:600;"; accessLabel.textContent = "🗺️ Folder Access Status:";
-
+  const accessLabel = document.createElement('label'); accessLabel.style.cssText = "font-size: 11px; color: var(--accent-2); font-weight:600;"; accessLabel.textContent = "Folder Access Status:";
   const selectAccess = document.createElement('select');
   selectAccess.style.cssText = "width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; cursor: pointer;";
-  selectAccess.innerHTML = `<option value="private">🔒 Private (Local Save Only)</option><option value="public">👥 Public (Global Cloud Folder)</option>`;
-
+  selectAccess.innerHTML = `<option value="private">Private (Local Save)</option><option value="public">Public (Cloud Global)</option>`;
   const actionWrap = document.createElement('div'); actionWrap.style.cssText = "display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;";
-
   const cancelBtn = document.createElement('button'); cancelBtn.textContent = "Cancel"; cancelBtn.style.cssText = "background: transparent; border: none; color: #8b93b4; font-size: 12px; cursor: pointer; padding: 8px 12px;";
   cancelBtn.onclick = () => overlay.remove();
-
   const confirmBtn = document.createElement('button'); confirmBtn.textContent = "Create"; confirmBtn.style.cssText = "background: var(--accent-2); border: none; color: #000; font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 16px; cursor: pointer;";
-  
-  confirmBtn.onclick = () => {
-    const val = input.value.trim(); const access = selectAccess.value; overlay.remove();
-    if(val) callback(val, access);
-  };
-
-  actionWrap.appendChild(cancelBtn); actionWrap.appendChild(confirmBtn);
-  box.appendChild(title); box.appendChild(input); box.appendChild(accessLabel); box.appendChild(selectAccess); box.appendChild(actionWrap);
-  overlay.appendChild(box); document.body.appendChild(overlay);
+  confirmBtn.onclick = () => { const val = input.value.trim(); const access = selectAccess.value; overlay.remove(); if(val) callback(val, access); };
+  actionWrap.appendChild(cancelBtn); actionWrap.appendChild(confirmBtn); box.appendChild(title); box.appendChild(input); box.appendChild(accessLabel); box.appendChild(selectAccess); box.appendChild(actionWrap); overlay.appendChild(box); document.body.appendChild(overlay);
   setTimeout(() => input.focus(), 100);
 }
 
 // ── 5. POP-UP MODAL KELOLA MUSIK (ADD / REMOVE JALUR CEPAT) ──
 function showQuickAddTracksModal(folderName) {
   const old = document.getElementById('quickAddModal'); if(old) old.remove();
-
   const overlay = document.createElement('div'); overlay.id = 'quickAddModal';
   overlay.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(5,7,10,0.85); backdrop-filter:blur(15px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; font-family:'Space Mono', monospace;";
-
   const box = document.createElement('div');
   box.style.cssText = "background:rgba(16,20,30,0.98); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:24px; width:100%; max-width:400px; max-height:75vh; box-shadow:0 20px 50px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:14px;";
-
-  const title = document.createElement('h4'); title.style.cssText = "margin:0; font-size:14px; color:#fff; font-weight:700;"; title.textContent = `⚙️ Manage Songs: 📁 ${folderName}`;
-
+  const title = document.createElement('h4'); title.style.cssText = "margin:0; font-size:14px; color:#fff; font-weight:700;"; title.textContent = `⚙️ Manage Songs: Folder ${folderName}`;
   const listWrap = document.createElement('div'); listWrap.style.cssText = "flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; max-height:45vh;";
 
   songs.forEach(song => {
     const inFolder = song.tags && song.tags.includes(folderName);
     const row = document.createElement('div'); row.style.cssText = "display:flex; align-items:center; justify-content:space-between; background:#0c0f16; border:1px solid rgba(255,255,255,0.03); padding:10px; border-radius:10px;";
-    
     row.innerHTML = `
       <div style="flex:1; min-width:0; padding-right:10px;">
         <div style="font-size:12px; color:#fff; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.title}</div>
-        <div style="font-size:11px; color:${inFolder ? 'var(--accent)' : '#6b7394'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.artist} ${inFolder ? '• [Inside]' : ''}</div>
+        <div style="font-size:11px; color:${inFolder ? 'var(--accent)' : '#6b7394'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.artist}</div>
       </div>
-      <button style="background:${inFolder ? 'var(--danger)' : 'var(--accent)'}; border:none; color:${inFolder ? '#fff' : '#000'}; font-size:10px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer; min-width:75px;">
-        ${inFolder ? '❌ REMOVE' : '➕ ADD'}
-      </button>
+      <button style="background:${inFolder ? 'var(--danger)' : 'var(--accent)'}; border:none; color:${inFolder ? '#fff' : '#000'}; font-size:10px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer; min-width:75px;">REMOVE</button>
     `;
-
     row.querySelector('button').onclick = (e) => {
       e.stopPropagation();
       if (inFolder) {
-        if (!song.isLocal && db) {
-          const remTags = (song.tags || []).filter(t => t !== folderName); db.ref('songs/' + song.id).update({ tags: remTags });
-        } else {
-          const idx = localSongs.findIndex(ls => ls.id === song.id);
-          if (idx !== -1 && localSongs[idx].tags) { localSongs[idx].tags = localSongs[idx].tags.filter(t => t !== folderName); saveLocalData(); }
-        }
-        showToast(`🗑️ Removed "${song.title}"`);
+        if (!song.isLocal && db) { const remTags = (song.tags || []).filter(t => t !== folderName); db.ref('songs/' + song.id).update({ tags: remTags }); } 
+        else { const idx = localSongs.findIndex(ls => ls.id === song.id); if (idx !== -1 && localSongs[idx].tags) { localSongs[idx].tags = localSongs[idx].tags.filter(t => t !== folderName); saveLocalData(); } }
+        showToast(`Removed "${song.title}"`);
       } else {
         if (!song.isLocal && db) { db.ref('songs/' + song.id).update({ tags: [...(song.tags || []), folderName] }); } 
-        else {
-          const idx = localSongs.findIndex(ls => ls.id === song.id);
-          if (idx !== -1) { if(!localSongs[idx].tags) localSongs[idx].tags = []; localSongs[idx].tags.push(folderName); saveLocalData(); }
-        }
-        showToast(`✅ Added "${song.title}"!`);
+        else { const idx = localSongs.findIndex(ls => ls.id === song.id); if (idx !== -1) { if(!localSongs[idx].tags) localSongs[idx].tags = []; localSongs[idx].tags.push(folderName); saveLocalData(); } }
+        showToast(`Added "${song.title}"!`);
       }
-      overlay.remove(); combineAndRender();
-      setTimeout(() => showQuickAddTracksModal(folderName), 150); 
+      overlay.remove(); combineAndRender(); setTimeout(() => showQuickAddTracksModal(folderName), 150); 
     };
     listWrap.appendChild(row);
   });
-
   const closeBtn = document.createElement('button'); closeBtn.textContent = "Close Panel"; closeBtn.style.cssText = "width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.05); color:#fff; border-radius:8px; padding:10px; font-size:12px; font-weight:600; cursor:pointer;";
-  closeBtn.onclick = () => overlay.remove();
-
-  box.appendChild(title); box.appendChild(listWrap); box.appendChild(closeBtn); overlay.appendChild(box); document.body.appendChild(overlay);
+  closeBtn.onclick = () => overlay.remove(); box.appendChild(title); box.appendChild(listWrap); box.appendChild(closeBtn); overlay.appendChild(box); document.body.appendChild(overlay);
 }
 
-// ── 6. RENDER BAR NAVIGASI HORIZONTAL (FIXED SCROLL & AUTO-SLIDE FOCUS) ──
+// ── 6. ENGINE CORE: PREMIUM NAVIGATION & GLOW LOGO INJECTION ──
 window.renderTagChips = function() {
   if (customFolderTitle) customFolderTitle.style.display = 'none';
   if (folderBar) folderBar.style.display = 'none'; 
+
+  // 💎 6A. SUNTIK LOGO NEON GLOWING DI KIRI ATAS (TANPA EMOTICON)
+  const logoBrand = document.querySelector('.logo') || document.querySelector('.brand-logo');
+  if (logoBrand) {
+    logoBrand.style.cssText = `
+      font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 900;
+      background: linear-gradient(135deg, #00ffcc, #aa00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 12px rgba(0,255,200,0.4); letter-spacing: -1px; cursor: pointer;
+    `;
+    logoBrand.innerHTML = "AMZ PLAY";
+  }
 
   const header = document.querySelector('.site-header');
   if (header) { header.style.setProperty('height', 'auto', 'important'); header.style.setProperty('position', 'sticky', 'important'); }
@@ -259,8 +276,7 @@ window.renderTagChips = function() {
     const parent = tagChips.parentNode;
     if (parent && !document.getElementById('navScrollWrapper')) {
       const wrapper = document.createElement('div'); wrapper.id = 'navScrollWrapper'; 
-      // KUNCI UTAMA: Paksa touch-action pan-x biar browser HP ngijinin geser horizontal mutlak tanpa macet
-      wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block; touch-action: pan-x !important; overflow: hidden;";
+      wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block; touch-action: pan-x !important; overflow: visible !important;";
       
       const fadeIndicator = document.createElement('div'); fadeIndicator.style.cssText = "position: absolute; right: 0; top: 0; height: 100%; width: 50px; background: linear-gradient(to right, transparent, rgba(10,12,18,0.95)); pointer-events: none; z-index: 10; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; color: var(--accent); font-size: 16px; font-weight:900; border-right: 2px solid var(--accent); animation: pulseGlow 1.5s infinite;";
       fadeIndicator.innerHTML = "➜";
@@ -268,68 +284,93 @@ window.renderTagChips = function() {
       const styleAnim = document.createElement('style'); 
       styleAnim.innerHTML = `
         @keyframes pulseGlow { 0%, 100% { opacity:0.4; transform:translateX(0); } 50% { opacity:1; transform:translateX(3px); } } 
-        .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; } 
+        .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; position: relative; } 
         .chip:active { transform: scale(0.92) !important; }
+        .spread-box { display: none; background: #10141e !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 12px; padding: 8px; position: absolute; top: 45px; left: 0; z-index: 999999 !important; flex-direction: column; gap: 6px; box-shadow: 0 15px 35px rgba(0,0,0,0.9) !important; width: 150px; animation: slideSpread 0.25s ease-out forwards; overflow: visible !important; }
+        @keyframes slideSpread { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        .spread-item { background: transparent; border: none; color: #fff !important; padding: 10px 14px; font-size: 13px; text-align: left; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; transition: 0.2s; }
+        .spread-item:hover, .spread-item.active { background: rgba(255,255,255,0.15); color: #00ffcc !important; }
       `; 
       document.head.appendChild(styleAnim);
-
       parent.insertBefore(wrapper, tagChips); wrapper.appendChild(tagChips); wrapper.appendChild(fadeIndicator);
     }
 
-    // PAKSA OVERFLOW JALAN DI HP MANAPUN
-    tagChips.style.cssText = "display: flex !important; gap: 8px !important; overflow-x: auto !important; scrollbar-width: none !important; padding: 6px 55px 6px 4px !important; width: 100% !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scroll-behavior: smooth !important; touch-action: pan-x !important;";
+    // Memaksa overflow-y agar visible, sehingga dropdown menyebar dengan aman tanpa terpotong layout kontainer induk
+    tagChips.style.cssText = "display: flex !important; gap: 8px !important; overflow-x: auto !important; scrollbar-width: none !important; padding: 6px 55px 6px 4px !important; width: 100% !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scroll-behavior: smooth !important; touch-action: pan-x !important; position: relative; overflow-y: visible !important;";
     tagChips.innerHTML = '';
-
-    // Mencegah interupsi vertical scroll bawaan HP
     tagChips.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: true});
 
-    // EFEK BOUNCE INDIKATOR: Menghentak otomatis ke kanan dikit pas refresh biar user langsung tau bisa di-swipe
     if (!window.hasBouncedOnce) {
       window.hasBouncedOnce = true;
       setTimeout(() => { tagChips.scrollTo({ left: 60, behavior: 'smooth' }); setTimeout(() => tagChips.scrollTo({ left: 0, behavior: 'smooth' }), 500); }, 400);
     }
 
-    // A. ISI MENU UTAMA (KLIK -> AUTOMATIC SLIDE TO CENTER FOCUS)
-    const mainFilters = [
-      { id: 'all', label: '🏠 Home', active: activeFolder === 'all' && activeTag === '' },
-      { id: 'public', label: '👥 Public', active: activeFolder === 'public' && activeTag === '' },
-      { id: 'private', label: '🔒 Private', active: activeFolder === 'private' && activeTag === '' },
-      { id: 'favorite', label: '⭐ Favorites', active: activeFolder === 'favorite' && activeTag === '' }
+    // 🧠 6B. REKAYASA SAKTI: DROPDOWN MENU SPREAD UTK HOME MENU (Z-INDEX ANTI-POTONG + ANTI-EMOT)
+    const homeContainerBtn = document.createElement('div');
+    homeContainerBtn.style.cssText = "position: relative; display: inline-block; overflow: visible !important; z-index: 999999 !important;";
+
+    const homeToggle = document.createElement('button');
+    const isMainActive = ['all','public','private','favorite'].includes(activeFolder) && activeTag === '';
+    homeToggle.className = `chip${isMainActive ? ' active' : ''}`;
+    homeToggle.innerHTML = `Home Menu ▾`;
+    
+    // Bikin Container Spread yang bisa pecah menyebar ke bawah
+    const spreadBox = document.createElement('div');
+    spreadBox.className = "spread-box";
+    spreadBox.id = "homeSpreadBox";
+
+    const items = [
+      { id: 'all', label: 'All Tracks' },
+      { id: 'public', label: 'Public' },
+      { id: 'private', label: 'Private' },
+      { id: 'favorite', label: 'Favorites' }
     ];
 
-    mainFilters.forEach(f => {
-      const btn = document.createElement('button'); btn.className = `chip${f.active ? ' active' : ''}`;
-      btn.style.setProperty('white-space', 'nowrap', 'important'); btn.innerHTML = f.label;
-      btn.onclick = () => { 
-        activeFolder = f.id; activeTag = ''; 
+    items.forEach(item => {
+      const sBtn = document.createElement('button');
+      sBtn.className = `spread-item${activeFolder === item.id && activeTag === '' ? ' active' : ''}`;
+      sBtn.innerHTML = item.label;
+      sBtn.onclick = (e) => {
+        e.stopPropagation();
+        activeFolder = item.id; activeTag = '';
+        spreadBox.style.display = 'none';
         renderAll();
-        // SAKTI: Klik langsung nge-slide halus ke tengah pandangan skrin
-        btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }; 
-      tagChips.appendChild(btn);
+      };
+      spreadBox.appendChild(sBtn);
     });
+
+    homeToggle.onclick = (e) => {
+      e.stopPropagation();
+      const currentDisplay = spreadBox.style.display;
+      document.querySelectorAll('.spread-box').forEach(b => b.style.display = 'none'); // Tutup dropdown lain
+      spreadBox.style.display = currentDisplay === 'flex' ? 'none' : 'flex';
+      homeToggle.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    };
+
+    // Auto close menu jika klik area bebas di luar layar
+    document.addEventListener('click', () => { spreadBox.style.display = 'none'; });
+
+    homeContainerBtn.appendChild(homeToggle);
+    homeContainerBtn.appendChild(spreadBox);
+    tagChips.appendChild(homeContainerBtn);
 
     const divider = document.createElement('div'); divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;"; tagChips.appendChild(divider);
 
-    // B. ISI DAFTAR CUSTOM FOLDER
+    // C. ISI DAFTAR CUSTOM FOLDER
     const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
     const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
     const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
 
     totalFolders.forEach(tag => {
       const meta = createdFoldersData[tag] || { access: 'private' };
-      const prefix = meta.access === 'public' ? '👥' : '📁';
+      const prefix = meta.access === 'public' ? 'Public:' : 'Folder:';
       const btn = document.createElement('button'); btn.className = `chip${activeTag === tag ? ' active' : ''}`;
       btn.style.setProperty('white-space', 'nowrap', 'important'); btn.textContent = `${prefix} ${tag}`;
-      btn.onclick = () => { 
-        activeTag = tag; renderAll(); 
-        // SAKTI: Klik folder langsung bergeser fokus ke tengah skrin
-        btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }; 
+      btn.onclick = () => { activeTag = tag; renderAll(); btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }; 
       tagChips.appendChild(btn);
     });
 
-    // C. AKSES MANAGEMENT TOMBOL INSIDE FOLDER
+    // D. KONTROL INTERIOR MANAGEMENT FOLDER
     if (activeTag !== '') {
       const quickAddBtn = document.createElement('button'); quickAddBtn.className = 'chip';
       quickAddBtn.style.cssText = "background: var(--surface) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight:800 !important; white-space:nowrap !important;";
@@ -337,30 +378,29 @@ window.renderTagChips = function() {
 
       const deleteFolderBtn = document.createElement('button'); deleteFolderBtn.className = 'chip';
       deleteFolderBtn.style.cssText = "background: rgba(255, 75, 75, 0.1) !important; border: 1px solid var(--danger) !important; color: var(--danger) !important; font-weight:800 !important; white-space:nowrap !important;";
-      deleteFolderBtn.innerHTML = `🗑️ Delete Folder`;
+      deleteFolderBtn.innerHTML = `Delete Folder`;
       deleteFolderBtn.onclick = () => {
         if(confirm(`Delete folder "${activeTag}"?\n(Songs will not be lost).`)) {
           localSongs.forEach((s, idx) => { if(s.tags && s.tags.includes(activeTag)) localSongs[idx].tags = s.tags.filter(t => t !== activeTag); }); saveLocalData();
           let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
           if(customFoldersMeta[activeTag]) { delete customFoldersMeta[activeTag]; localStorage.setItem('amz_folders_meta', JSON.stringify(customFoldersMeta)); }
-          showToast(`🗑️ Folder deleted.`); activeTag = ''; activeFolder = 'all'; combineAndRender();
+          showToast(`Folder deleted.`); activeTag = ''; activeFolder = 'all'; combineAndRender();
         }
       };
       tagChips.appendChild(deleteFolderBtn);
     }
 
-    // D. TOMBOL +FOLDER UTAMA
+    // E. TOMBOL TAMBAH FOLDER BARU (+ Folder / Add Song)
     const addFolderBtn = document.createElement('button'); addFolderBtn.className = 'chip';
     addFolderBtn.style.cssText = "border: 1px dashed var(--accent-2) !important; color: var(--accent-2) !important; font-weight: 700 !important; white-space: nowrap !important;";
-    addFolderBtn.innerHTML = `➕ Folder`;
-    
+    addFolderBtn.innerHTML = `+ Folder`;
     addFolderBtn.onclick = () => {
       showCustomFolderModal((folderName, access) => {
         let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
         if (!customFoldersMeta[folderName]) {
           customFoldersMeta[folderName] = { access: access, createdAt: new Date().toISOString() };
           localStorage.setItem('amz_folders_meta', JSON.stringify(customFoldersMeta));
-          showToast(`📁 Folder "${folderName}" created!`); combineAndRender();
+          showToast(`Folder "${folderName}" created!`); combineAndRender();
         } else { alert("Folder name already exists!"); }
       });
     };
@@ -379,24 +419,21 @@ window.openDetailModal = function(id) {
   const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
 
   const moveFolderContainer = document.createElement('div'); moveFolderContainer.style.cssText = "margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 8px;";
-  const label = document.createElement('label'); label.style.cssText = "font-size: 12px; color: var(--accent-2); font-weight: 600;"; label.textContent = "⚙️ Move Track to Folder:";
+  const label = document.createElement('label'); label.style.cssText = "font-size: 12px; color: var(--accent-2); font-weight: 600;"; label.textContent = "Move Track to Folder:";
   
   const select = document.createElement('select'); select.style.cssText = "width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; cursor: pointer;";
   const defOpt = document.createElement('option'); defOpt.value = ""; defOpt.textContent = `-- Select Target Folder --`; select.appendChild(defOpt);
   
   totalFolders.forEach(folder => {
-    const opt = document.createElement('option'); opt.value = folder; opt.textContent = `📁 ${folder}`;
+    const opt = document.createElement('option'); opt.value = folder; opt.textContent = `Folder: ${folder}`;
     if (song.tags && song.tags.includes(folder)) opt.selected = true; select.appendChild(opt);
   });
 
   select.onchange = (e) => {
     const targetFolder = e.target.value; if (!targetFolder) return;
     if (!song.isLocal && db) { db.ref('songs/' + song.id).update({ tags: [targetFolder] }); } 
-    else {
-      const localIdx = localSongs.findIndex(s => s.id === song.id);
-      if (localIdx !== -1) { localSongs[localIdx].tags = [targetFolder]; saveLocalData(); }
-    }
-    combineAndRender(); closeModalsWithBack(); showToast(`📦 Moved to ${targetFolder}!`);
+    else { const localIdx = localSongs.findIndex(s => s.id === song.id); if (localIdx !== -1) { localSongs[localIdx].tags = [targetFolder]; saveLocalData(); } }
+    combineAndRender(); closeModalsWithBack(); showToast(`Moved to ${targetFolder}!`);
   };
   moveFolderContainer.appendChild(label); moveFolderContainer.appendChild(select); detailPlatforms.appendChild(moveFolderContainer);
 };
