@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  script.js (FOLDER SYSTEM + NEXUS ENGINE)
+   AMZ LIAN — Playlist  ·  script.js (FOLDER SYSTEM + APPLE PREVIEW ENGINE)
 ═══════════════════════════════════════════════════ */
 
 'use strict';
@@ -24,10 +24,15 @@ const firebaseConfig = {
   appId: "1:889161528054:web:9a8e59fac0607b4f8732d7"
 };
 
+let db = null;
 try {
-  firebase.initializeApp(firebaseConfig);
-} catch (e) {}
-const db = firebase.database();
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+  }
+} catch (e) {
+  console.warn("Firebase Init Error:", e);
+}
 
 const LOCAL_STORAGE_KEY = 'amzLianPlaylist_LocalSongs';
 const PINNED_OFFICIAL_KEY = 'amzLianPlaylist_PinnedOfficial';
@@ -53,8 +58,8 @@ let formAutofillTimeout = null;
 let currentSongId = null;
 let editingSongId = null;
 
-// ── NEXUS AUDIO ENGINE STATES ──
-const nexusAudio = new Audio(); // Pure JS Audio, no HTML dependency needed!
+// ── AUDIO ENGINE STATES (MURNI PREVIEW PLATFORM) ──
+const nexusAudio = new Audio(); 
 let currentQueue = [];
 let currentQueueIndex = -1;
 let isShuffle = false;
@@ -161,6 +166,7 @@ const PLATFORMS_CONFIG = [
 
 function sanitizeText(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
 function showToast(msg) { clearTimeout(toastTimer); if(toast) { toast.textContent = msg; toast.hidden = false; toastTimer = setTimeout(() => { toast.hidden = true; }, 2500); } }
+// Modals control
 function closeModalsUI() { if(detailOverlay) detailOverlay.hidden = true; if(formOverlay) formOverlay.hidden = true; }
 function closeModalsWithBack() { closeModalsUI(); if (window.history.state && window.history.state.modal) window.history.back(); }
 window.addEventListener('popstate', (e) => { if (!e.state || !e.state.modal) closeModalsUI(); });
@@ -177,16 +183,20 @@ async function loadData() {
     }
   } catch (e) { console.warn("Fetch fail", e); }
 
-  db.ref('songs').on('value', (snapshot) => {
-    const data = snapshot.val();
-    cloudSongs = [];
-    if (data) {
-      Object.keys(data).forEach(key => {
-        cloudSongs.push({ id: key, isCloud: true, ...data[key], pinned: pinnedOfficialIds.includes(key) });
-      });
-    }
+  if (db) {
+    db.ref('songs').on('value', (snapshot) => {
+      const data = snapshot.val();
+      cloudSongs = [];
+      if (data) {
+        Object.keys(data).forEach(key => {
+          cloudSongs.push({ id: key, isCloud: true, ...data[key], pinned: pinnedOfficialIds.includes(key) });
+        });
+      }
+      combineAndRender();
+    });
+  } else {
     combineAndRender();
-  });
+  }
 }
 
 function combineAndRender() {
@@ -367,7 +377,7 @@ function buildCard(song) {
         ${song.isExternal 
           ? `<button class="card-btn card-btn-play" data-action="toggle-ext-menu" style="flex:1; background:var(--accent); font-size:11px;">🔍 Search Links</button>
              <button class="card-btn" style="padding:0 8px; font-size:11px; border:1px solid var(--accent-2); color:var(--accent-2);" onclick="event.stopPropagation(); quickAddFromExternal('${sanitizeText(song.title).replace(/'/g, "\\'")}', '${sanitizeText(song.artist).replace(/'/g, "\\'")}', '${hasCover}')">➕ Save</button>`
-          : `<button class="card-btn card-btn-play" data-action="toggle-menu" style="width:100%;">▶ Menu</button>`
+          : `<button class="card-btn card-btn-play" data-action="toggle-menu" style="width:100%;">▶ Play / Menu</button>`
         }
         <div class="player-dropdown" id="dropdown-${song.id}" hidden></div>
       </div>
@@ -403,6 +413,12 @@ function buildCard(song) {
     });
 
   } else {
+    const optDirect = document.createElement('button');
+    optDirect.className = 'dropdown-opt dropdown-opt-main';
+    optDirect.innerHTML = `⚡ Play Preview`;
+    optDirect.onclick = (e) => { e.stopPropagation(); runLivePlayer(song); dropdown.hidden = true; };
+    dropdown.appendChild(optDirect);
+
     if (song.links) {
       PLATFORMS_CONFIG.forEach(p => {
         if (song.links[p.key]) {
@@ -467,7 +483,7 @@ function renderAll() {
       <span style="font-family:'Space Mono',monospace; font-size:12px; color:var(--accent); background:rgba(124,106,247,0.15); padding:6px 16px; border-radius:999px;">
         🌍 INTERNET SUGGESTIONS
       </span>
-      <p style="margin-top:10px; font-size:13px; color:var(--text-dim);">Click <b>Save</b> to store this song.</p>
+      <p style="margin-top:10px; font-size:13px; color:var(--text-dim);">Click <b>Save</b> to store this song permanently.</p>
     `;
     playlistGrid.appendChild(sectionDivider);
 
@@ -499,6 +515,18 @@ if(clearSearch) {
   clearSearch.onclick = () => { searchQuery = ''; searchInput.value = ''; clearSearch.hidden = true; externalSearchResults = []; renderAll(); };
 }
 
+if(fAutoSearch) {
+  fAutoSearch.oninput = (e) => {
+    const query = e.target.value;
+    clearTimeout(formAutofillTimeout);
+    if (query.trim().length >= 2) {
+      formAutofillTimeout = setTimeout(() => { fetchForFormAutofill(query); }, 500);
+    } else {
+      if(fAutoSearchResults) fAutoSearchResults.innerHTML = '';
+    }
+  };
+}
+
 window.quickAddFromExternal = function(title, artist, coverUrl) {
   openFormModal();
   if(fTitle) fTitle.value = title;
@@ -515,6 +543,145 @@ window.quickAddFromExternal = function(title, artist, coverUrl) {
   showToast("📋 Links auto-filled successfully!");
 };
 
+// ── ⚡ AUDIO ENGINE PREVIEW (MURNI PREVIEW RESMI DARI ITUNES API) ──
+
+function formatTime(s) {
+  if(isNaN(s) || s < 0) return "0:00";
+  const min = Math.floor(s/60);
+  const sec = Math.floor(s%60);
+  return min + ":" + (sec < 10 ? "0"+sec : sec);
+}
+
+nexusAudio.ontimeupdate = () => {
+  const nProg = document.getElementById('nxProg');
+  const nCurr = document.getElementById('nxCurr');
+  const nDur = document.getElementById('nxDur');
+  if(nProg && nCurr && nDur && nexusAudio.duration) {
+    nProg.value = (nexusAudio.currentTime / nexusAudio.duration) * 100;
+    nCurr.textContent = formatTime(nexusAudio.currentTime);
+    nDur.textContent = formatTime(nexusAudio.duration);
+  }
+};
+
+nexusAudio.onplay = () => { const btn = document.getElementById('nxPlay'); if(btn) btn.innerHTML = "⏸"; };
+nexusAudio.onpause = () => { const btn = document.getElementById('nxPlay'); if(btn && nexusAudio.src) btn.innerHTML = "▶"; };
+
+nexusAudio.onended = () => {
+  if(isRepeat) { 
+    nexusAudio.currentTime = 0; 
+    nexusAudio.play(); 
+  } else { 
+    const nNext = document.getElementById('nxNext'); 
+    if(nNext) nNext.click(); 
+  }
+};
+
+// Ambil link preview audio resmi dari server iTunes (Instant & Anti-CORS)
+async function fetchPreviewAudioUrl(title, artist) {
+  const query = encodeURIComponent(`${title} ${artist}`);
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+    const data = await res.json();
+    if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+      return data.results[0].previewUrl; // Mengembalikan url m4a potongan musik resmi
+    }
+  } catch(e) { console.error("iTunes target fail", e); }
+  throw new Error("Preview not found");
+}
+
+function runLivePlayer(song) {
+  const trackList = getFilteredSorted();
+  currentQueue = [...trackList];
+  currentQueueIndex = currentQueue.findIndex(s => s.id === song.id);
+  if(currentQueueIndex === -1) { currentQueue.push(song); currentQueueIndex = currentQueue.length - 1; }
+  playCurrentQueueIndex();
+}
+
+function playCurrentQueueIndex() {
+  if(currentQueueIndex < 0 || currentQueueIndex >= currentQueue.length) return;
+  const song = currentQueue[currentQueueIndex];
+  
+  if(playerTitle) playerTitle.textContent = song.title;
+  if(playerArtist) playerArtist.textContent = song.artist;
+  if(miniPlayer) miniPlayer.hidden = false;
+  
+  if(playerFrameContainer) {
+    playerFrameContainer.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; width:100%; padding:0 15px;">
+        <div style="display:flex; align-items:center; gap:18px; margin-bottom:6px;">
+          <button id="nxShuffle" style="background:none; border:none; color:${isShuffle ? 'var(--accent)' : 'var(--muted)'}; font-size:16px; cursor:pointer;">🔀</button>
+          <button id="nxPrev" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">⏮</button>
+          <button id="nxPlay" style="background:var(--accent); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;">⏳</button>
+          <button id="nxNext" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">⏭</button>
+          <button id="nxRepeat" style="background:none; border:none; color:${isRepeat ? 'var(--accent)' : 'var(--muted)'}; font-size:16px; cursor:pointer;">🔁</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; width:100%;">
+          <span id="nxCurr" style="font-size:11px; color:var(--muted); font-family:monospace; min-width:35px; text-align:right;">0:00</span>
+          <input id="nxProg" type="range" value="0" min="0" max="100" style="flex:1; accent-color:var(--accent); height:4px; cursor:pointer; background:rgba(255,255,255,0.1); border-radius:4px;" />
+          <span id="nxDur" style="font-size:11px; color:var(--muted); font-family:monospace; min-width:35px;">0:00</span>
+        </div>
+      </div>
+    `;
+    
+    const nPlay = document.getElementById('nxPlay');
+    const nNext = document.getElementById('nxNext');
+    const nPrev = document.getElementById('nxPrev');
+    const nShuffle = document.getElementById('nxShuffle');
+    const nRepeat = document.getElementById('nxRepeat');
+    const nProg = document.getElementById('nxProg');
+    const nDur = document.getElementById('nxDur');
+    
+    nexusAudio.pause();
+    nexusAudio.src = "";
+    
+    nPlay.onclick = () => { if(nexusAudio.paused) nexusAudio.play(); else nexusAudio.pause(); };
+    
+    nNext.onclick = () => {
+      if(isShuffle) currentQueueIndex = Math.floor(Math.random() * currentQueue.length);
+      else currentQueueIndex = (currentQueueIndex + 1) % currentQueue.length;
+      playCurrentQueueIndex();
+    };
+    
+    nPrev.onclick = () => {
+      currentQueueIndex--;
+      if(currentQueueIndex < 0) currentQueueIndex = currentQueue.length - 1;
+      playCurrentQueueIndex();
+    };
+    
+    nShuffle.onclick = () => { 
+      isShuffle = !isShuffle; 
+      if(nShuffle) nShuffle.style.color = isShuffle ? 'var(--accent)' : 'var(--muted)'; 
+    };
+    
+    nRepeat.onclick = () => { 
+      isRepeat = !isRepeat; 
+      if(nRepeat) nRepeat.style.color = isRepeat ? 'var(--accent)' : 'var(--muted)'; 
+    };
+    
+    nProg.oninput = () => { 
+      if(nexusAudio.duration) nexusAudio.currentTime = (nProg.value / 100) * nexusAudio.duration; 
+    };
+    
+    fetchPreviewAudioUrl(song.title, song.artist).then(url => {
+      nexusAudio.src = url;
+      nexusAudio.play().then(() => { if(nPlay) nPlay.innerHTML = "⏸"; }).catch(() => { if(nPlay) nPlay.innerHTML = "▶"; });
+    }).catch(e => {
+      if(nPlay) nPlay.innerHTML = "❌";
+      if(nDur) nDur.textContent = "Err";
+      showToast("⚠️ Platform preview link not found.");
+    });
+  }
+}
+
+if(closePlayer) {
+  closePlayer.onclick = () => { 
+    if(miniPlayer) miniPlayer.hidden = true; 
+    if(playerFrameContainer) playerFrameContainer.innerHTML = ''; 
+    nexusAudio.pause();
+    nexusAudio.src = '';
+  };
+}
+
 // ── Modals Setup ──
 function openDetailModal(id) {
   const song = songs.find(s => s.id === id);
@@ -530,7 +697,17 @@ function openDetailModal(id) {
   else { if(detailTags) detailTags.innerHTML = `<span class="detail-tag" style="background:#555; color:#fff;">🔒 Private Local</span>`; }
 
   if(detailPlatforms) detailPlatforms.innerHTML = '';
-  
+  const mainPlayBtn = document.createElement('button');
+  mainPlayBtn.className = 'platform-btn';
+  mainPlayBtn.style.background = 'var(--accent)';
+  mainPlayBtn.style.borderColor = 'var(--accent)';
+  mainPlayBtn.style.color = '#fff';
+  mainPlayBtn.style.width = '100%';
+  mainPlayBtn.style.marginBottom = '12px';
+  mainPlayBtn.innerHTML = `⚡ <span>Play Preview</span>`;
+  mainPlayBtn.onclick = () => { runLivePlayer(song); closeModalsWithBack(); };
+  if(detailPlatforms) detailPlatforms.appendChild(mainPlayBtn);
+
   if (song.links) {
     PLATFORMS_CONFIG.forEach(p => {
       if (song.links[p.key]) {
@@ -578,9 +755,9 @@ if(detailDeleteBtn) {
   detailDeleteBtn.onclick = () => { 
     const song = songs.find(s => s.id === currentSongId);
     if (song.isCloud) {
-      const pass = prompt("Enter Admin Password:");
+      const pass = prompt("Enter Admin Password to delete:");
       if (pass !== ADMIN_PASSWORD) { alert("❌ Access denied!"); return; }
-      db.ref('songs/' + currentSongId).remove().then(() => { showToast("🗑️ Deleted from Cloud!"); closeModalsWithBack(); });
+      if(db) db.ref('songs/' + currentSongId).remove().then(() => { showToast("🗑️ Deleted from Cloud!"); closeModalsWithBack(); });
     } else {
       if(confirm("Delete this song from private playlist?")) {
         localSongs = localSongs.filter(s => s.id !== currentSongId);
@@ -605,6 +782,8 @@ if(detailPinBtn) {
 function updateCoverPreview(url) { if(url) { if(coverPreview) {coverPreview.src = url; coverPreview.hidden = false;} } else { if(coverPreview) coverPreview.hidden = true; } }
 
 function openFormModal(id = null) {
+  if (id && typeof id !== 'string') id = null; 
+
   if(formError) formError.hidden = true;
   if(fAutoSearch) fAutoSearch.value = ''; 
   if(fAutoSearchResults) fAutoSearchResults.innerHTML = ''; 
@@ -635,7 +814,7 @@ function openFormModal(id = null) {
   if(fTags) {
     const fTagsLabel = fTags.previousElementSibling;
     if (fTagsLabel) fTagsLabel.innerHTML = '📁 Folders / Tags <span class="form-hint">(Optional)</span>';
-    fTags.placeholder = "e.g. Pop, Chill, Workout...";
+    if(fTags) fTags.placeholder = "e.g. Pop, Chill, Workout...";
   }
 
   if (!window.history.state || window.history.state.modal !== 'form') {
@@ -666,6 +845,7 @@ if(formSaveBtn) {
     if (tipeAkses === '2') {
       const pass = prompt("Enter Admin Password:");
       if (pass !== ADMIN_PASSWORD) { alert("❌ Access denied."); return; }
+      if (!db) { alert("❌ Database not connected. Please check your internet connection."); return; }
 
       if (editingSongId) {
         db.ref('songs/' + editingSongId).update({ title, artist, cover: fCover ? fCover.value.trim() : '', tags, links })
