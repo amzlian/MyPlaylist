@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (COMPLETE ENGINE - NO CODE CUTS)
+   AMZ LIAN — Playlist  ·  features.js (FINAL PERFECT SWIPABLE ENGINE)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! All features integrated with Perfect Swipable UI.");
+console.log("⚡ features.js loaded! All-in-One Swipable Navigation Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -247,7 +247,7 @@ function showQuickAddTracksModal(folderName) {
   box.appendChild(title); box.appendChild(listWrap); box.appendChild(closeBtn); overlay.appendChild(box); document.body.appendChild(overlay);
 }
 
-// ── 6. RENDER ALL-IN-ONE SWIPABLE NAV BAR + SLIDE FOCUS ENGINE ──
+// ── 6. RENDER BAR NAVIGASI HORIZONTAL (FIXED SCROLL & AUTO-SLIDE FOCUS) ──
 window.renderTagChips = function() {
   if (customFolderTitle) customFolderTitle.style.display = 'none';
   if (folderBar) folderBar.style.display = 'none'; 
@@ -258,7 +258,9 @@ window.renderTagChips = function() {
   if (tagChips) {
     const parent = tagChips.parentNode;
     if (parent && !document.getElementById('navScrollWrapper')) {
-      const wrapper = document.createElement('div'); wrapper.id = 'navScrollWrapper'; wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block;";
+      const wrapper = document.createElement('div'); wrapper.id = 'navScrollWrapper'; 
+      // KUNCI UTAMA: Paksa touch-action pan-x biar browser HP ngijinin geser horizontal mutlak tanpa macet
+      wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block; touch-action: pan-x !important; overflow: hidden;";
       
       const fadeIndicator = document.createElement('div'); fadeIndicator.style.cssText = "position: absolute; right: 0; top: 0; height: 100%; width: 50px; background: linear-gradient(to right, transparent, rgba(10,12,18,0.95)); pointer-events: none; z-index: 10; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; color: var(--accent); font-size: 16px; font-weight:900; border-right: 2px solid var(--accent); animation: pulseGlow 1.5s infinite;";
       fadeIndicator.innerHTML = "➜";
@@ -274,15 +276,20 @@ window.renderTagChips = function() {
       parent.insertBefore(wrapper, tagChips); wrapper.appendChild(tagChips); wrapper.appendChild(fadeIndicator);
     }
 
-    tagChips.style.cssText = "display: flex !important; gap: 8px !important; overflow-x: auto !important; scrollbar-width: none !important; padding: 6px 55px 6px 4px !important; width: 100% !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scroll-behavior: smooth !important;";
+    // PAKSA OVERFLOW JALAN DI HP MANAPUN
+    tagChips.style.cssText = "display: flex !important; gap: 8px !important; overflow-x: auto !important; scrollbar-width: none !important; padding: 6px 55px 6px 4px !important; width: 100% !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scroll-behavior: smooth !important; touch-action: pan-x !important;";
     tagChips.innerHTML = '';
 
+    // Mencegah interupsi vertical scroll bawaan HP
+    tagChips.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: true});
+
+    // EFEK BOUNCE INDIKATOR: Menghentak otomatis ke kanan dikit pas refresh biar user langsung tau bisa di-swipe
     if (!window.hasBouncedOnce) {
       window.hasBouncedOnce = true;
-      setTimeout(() => { tagChips.scrollTo({ left: 45, behavior: 'smooth' }); setTimeout(() => tagChips.scrollTo({ left: 0, behavior: 'smooth' }), 600); }, 400);
+      setTimeout(() => { tagChips.scrollTo({ left: 60, behavior: 'smooth' }); setTimeout(() => tagChips.scrollTo({ left: 0, behavior: 'smooth' }), 500); }, 400);
     }
 
-    // A. MENU NAVIGASI UTAMA + FITUR AUTO-SLIDE KE TENGAH LAYAR SAAT DIKLIK
+    // A. ISI MENU UTAMA (KLIK -> AUTOMATIC SLIDE TO CENTER FOCUS)
     const mainFilters = [
       { id: 'all', label: '🏠 Home', active: activeFolder === 'all' && activeTag === '' },
       { id: 'public', label: '👥 Public', active: activeFolder === 'public' && activeTag === '' },
@@ -296,7 +303,7 @@ window.renderTagChips = function() {
       btn.onclick = () => { 
         activeFolder = f.id; activeTag = ''; 
         renderAll();
-        // ⚡ FITUR SLIDE: Geser nav-bar secara presisi agar tombol yang diklik berada di tengah layar HP
+        // SAKTI: Klik langsung nge-slide halus ke tengah pandangan skrin
         btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }; 
       tagChips.appendChild(btn);
@@ -304,7 +311,7 @@ window.renderTagChips = function() {
 
     const divider = document.createElement('div'); divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;"; tagChips.appendChild(divider);
 
-    // B. DAFTAR CUSTOM FOLDER
+    // B. ISI DAFTAR CUSTOM FOLDER
     const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
     const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
     const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
@@ -315,15 +322,14 @@ window.renderTagChips = function() {
       const btn = document.createElement('button'); btn.className = `chip${activeTag === tag ? ' active' : ''}`;
       btn.style.setProperty('white-space', 'nowrap', 'important'); btn.textContent = `${prefix} ${tag}`;
       btn.onclick = () => { 
-        activeTag = tag; 
-        renderAll(); 
-        // ⚡ FITUR SLIDE: Geser folder kustom yang diklik langsung ke posisi fokus tengah skrin HP
+        activeTag = tag; renderAll(); 
+        // SAKTI: Klik folder langsung bergeser fokus ke tengah skrin
         btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }; 
       tagChips.appendChild(btn);
     });
 
-    // C. MANAGEMENT INSIDE FOLDER
+    // C. AKSES MANAGEMENT TOMBOL INSIDE FOLDER
     if (activeTag !== '') {
       const quickAddBtn = document.createElement('button'); quickAddBtn.className = 'chip';
       quickAddBtn.style.cssText = "background: var(--surface) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight:800 !important; white-space:nowrap !important;";
@@ -395,7 +401,7 @@ window.openDetailModal = function(id) {
   moveFolderContainer.appendChild(label); moveFolderContainer.appendChild(select); detailPlatforms.appendChild(moveFolderContainer);
 };
 
-// ── 8. TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU COLO-COLO PALING ATAS GRID ──
+// ── 8. TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU KESIMPAN PALING ATAS GRID ──
 window.combineAndRender = function() {
   const markedLocal = localSongs.map(s => ({ ...s, isLocal: true, pinned: pinnedOfficialIds.includes(s.id) }));
   const sortedLocalAndCloud = [...cloudSongs, ...markedLocal].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
