@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (ALL-IN-ONE SWIPABLE HEADER)
+   AMZ LIAN — Playlist  ·  features.js (CUSTOM DARK MODAL DIALOG)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! All-in-One Swipable Navigation Active.");
+console.log("⚡ features.js loaded! All-in-One Swipable Navigation & Dark Modal Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -164,11 +164,87 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. ⚡ MASTERPIECE LEBUR FILTER UTAMA DAN CUSTOM FOLDER JADI 1 BARIS HORIZONTAL + TRIGGER INDICATOR ⚡ ──
+// ── 4. ⚡ SISTEM POP-UP MODAL CUSTOM (DARK MODE PREMIUM) - ANTI PROMPT JADUL ──
+function showCustomFolderModal(callback) {
+  // Hapus modal lama jika ada duplikat gantung
+  const oldModal = document.getElementById('customFolderModal');
+  if(oldModal) oldModal.remove();
+
+  // Bikin elemen backdrop hitam buram overlay mutlak
+  const overlay = document.createElement('div');
+  overlay.id = 'customFolderModal';
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(15px);
+    z-index: 99999; display: flex; align-items: center; justify-content: center;
+    padding: 20px; box-sizing: border-box; font-family: 'Space Mono', monospace;
+  `;
+
+  // Bikin kotak box dialog bertema gelap pekat transparan mewah
+  const box = document.createElement('div');
+  box.style.cssText = `
+    background: rgba(16, 20, 30, 0.98); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 24px; width: 100%; max-width: 360px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 16px;
+  `;
+
+  // Judul Header Modal
+  const title = document.createElement('h4');
+  title.style.cssText = "margin: 0; font-size: 15px; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 8px;";
+  title.innerHTML = `📁 Create Custom Folder`;
+
+  // Petunjuk Input
+  const sub = document.createElement('p');
+  sub.style.cssText = "margin: 0; font-size: 11px; color: #8b93b4; line-height: 1.4;";
+  sub.textContent = "Enter a name for your private categorizing playlist folder:";
+
+  // Kolom Input (Background Gelap, Teks Putih Tajam)
+  const input = document.createElement('input');
+  input.type = "text";
+  input.placeholder = "e.g. Chill, Lofi, Slow, Night...";
+  input.style.cssText = `
+    width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 12px; color: #fff; font-size: 13px;
+    outline: none; font-family: inherit; box-sizing: border-box;
+  `;
+  
+  // Bungkus Tombol Aksi Kanan-Kiri
+  const actionWrap = document.createElement('div');
+  actionWrap.style.cssText = "display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;";
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.style.cssText = "background: transparent; border: none; color: #8b93b4; font-size: 12px; cursor: pointer; padding: 8px 12px;";
+  cancelBtn.onclick = () => overlay.remove();
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.textContent = "Create";
+  confirmBtn.style.cssText = "background: var(--accent-2); border: none; color: #000; font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,255,200,0.15);";
+  
+  confirmBtn.onclick = () => {
+    const val = input.value.trim();
+    overlay.remove();
+    if(val) callback(val);
+  };
+
+  // Rakit Komponen Modal
+  actionWrap.appendChild(cancelBtn);
+  actionWrap.appendChild(confirmBtn);
+  box.appendChild(title);
+  box.appendChild(sub);
+  box.appendChild(input);
+  box.appendChild(actionWrap);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  // Fokus otomatis ke inputan teks biar user tinggal ketik instan
+  setTimeout(() => input.focus(), 100);
+}
+
+// ── 5. LEBUR FILTER UTAMA DAN CUSTOM FOLDER JADI 1 BARIS HORIZONTAL ──
 window.renderTagChips = function() {
-  // Sembunyikan judul teks bwaan agar space layar HP super maksimal
   if (customFolderTitle) customFolderTitle.style.display = 'none';
-  if (folderBar) folderBar.style.display = 'none'; // Matikan bar menu lama bawaan html
+  if (folderBar) folderBar.style.display = 'none'; 
 
   const header = document.querySelector('.site-header');
   if (header) {
@@ -177,14 +253,12 @@ window.renderTagChips = function() {
   }
 
   if (tagChips) {
-    // 🎨 DESAIN PENAMPUNG NAVIGASI SATU BARIS + EFEK OVERLAP GRADASI DI KANAN SEBAGAI TRIGGER GESER
     const parent = tagChips.parentNode;
     if (parent && !document.getElementById('navScrollWrapper')) {
       const wrapper = document.createElement('div');
       wrapper.id = 'navScrollWrapper';
       wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block;";
       
-      // Efek Fade Shadow di ujung kanan (Tanda/Trigger visual kalau list ini bisa di-swipe)
       const fadeIndicator = document.createElement('div');
       fadeIndicator.style.cssText = "position: absolute; right: 0; top: 0; height: 100%; width: 50px; background: linear-gradient(to right, transparent, rgba(10,12,18,0.9)); pointer-events: none; z-index: 10; border-right: 2px solid var(--accent-2);";
       
@@ -193,7 +267,6 @@ window.renderTagChips = function() {
       wrapper.appendChild(fadeIndicator);
     }
 
-    // Set style list agar lurus horizontal sempurna dan anti-melar ke bawah
     tagChips.style.cssText = `
       display: flex !important;
       gap: 8px !important;
@@ -206,7 +279,6 @@ window.renderTagChips = function() {
     `;
     tagChips.innerHTML = '';
 
-    // A. SUNTIK LIST FILTER UTAMA (DARI KODINGAN HTML LAMA) KE DALAM BARISAN YANG SAMA
     const mainFilters = [
       { id: 'all', label: '🏠 Home', active: activeFolder === 'all' && activeTag === '' },
       { id: 'public', label: '👥 Public', active: activeFolder === 'public' && activeTag === '' },
@@ -219,20 +291,14 @@ window.renderTagChips = function() {
       btn.className = `chip${f.active ? ' active' : ''}`;
       btn.style.setProperty('white-space', 'nowrap', 'important');
       btn.innerHTML = f.label;
-      btn.onclick = () => {
-        activeFolder = f.id;
-        activeTag = '';
-        renderAll();
-      };
+      btn.onclick = () => { activeFolder = f.id; activeTag = ''; renderAll(); };
       tagChips.appendChild(btn);
     });
 
-    // Tambahkan Garis Pembatas Neon Kecil Antara Menu Utama dengan List Custom Folder
     const divider = document.createElement('div');
     divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;";
     tagChips.appendChild(divider);
 
-    // B. SUNTIK LIST CUSTOM FOLDER BUATAN USER
     const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
     const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
     const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
@@ -242,37 +308,35 @@ window.renderTagChips = function() {
       btn.className = `chip${activeTag === tag ? ' active' : ''}`;
       btn.style.setProperty('white-space', 'nowrap', 'important');
       btn.textContent = `📁 ${tag}`;
-      btn.onclick = () => {
-        activeTag = tag;
-        renderAll();
-      };
+      btn.onclick = () => { activeTag = tag; renderAll(); };
       tagChips.appendChild(btn);
     });
 
-    // C. SUNTIK TOMBOL [+ FOLDER] INDEPENDEN DI UJUNG AKHIR BARISAN SCROLL
+    // SUNTIK TOMBOL [+ FOLDER] - DIHUBUNGKAN KE POP-UP CUSTOM PREMIUM ANTI-PROMPT
     const addFolderBtn = document.createElement('button');
     addFolderBtn.className = 'chip';
     addFolderBtn.style.cssText = "border: 1px dashed var(--accent-2) !important; color: var(--accent-2) !important; font-weight: 700 !important; white-space: nowrap !important;";
     addFolderBtn.innerHTML = `➕ Folder`;
+    
     addFolderBtn.onclick = () => {
-      const folderName = prompt("Enter new custom folder name:");
-      if (!folderName || !folderName.trim()) return;
-      
-      let customCreatedFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
-      if (!customCreatedFolders.includes(folderName.trim())) {
-        customCreatedFolders.push(folderName.trim());
-        localStorage.setItem('amz_custom_folders', JSON.stringify(customCreatedFolders));
-        showToast(`📁 Folder "${folderName.trim()}" created!`);
-        combineAndRender();
-      } else {
-        alert("Folder already exists!");
-      }
+      // Panggil sistem modal buatan sendiri (Gak pake prompt jadul browser)
+      showCustomFolderModal((folderName) => {
+        let customCreatedFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
+        if (!customCreatedFolders.includes(folderName)) {
+          customCreatedFolders.push(folderName);
+          localStorage.setItem('amz_custom_folders', JSON.stringify(customCreatedFolders));
+          showToast(`📁 Folder "${folderName}" created!`);
+          combineAndRender();
+        } else {
+          alert("Folder already exists!");
+        }
+      });
     };
     tagChips.appendChild(addFolderBtn);
   }
 };
 
-// ── 5. MANAGEMENT PINDAH FOLDER PADA DETAIL MODAL LAGU ──
+// ── 6. MANAGEMENT PINDAH FOLDER PADA DETAIL MODAL LAGU ──
 const originalOpenDetailModal = window.openDetailModal;
 window.openDetailModal = function(id) {
   if (typeof originalOpenDetailModal === 'function') originalOpenDetailModal(id);
