@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (CUSTOM DARK MODAL DIALOG)
+   AMZ LIAN — Playlist  ·  features.js (PERFECT SORTING & LAYERING)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! All-in-One Swipable Navigation & Dark Modal Active.");
+console.log("⚡ features.js loaded! All-in-One Navigation, Newest First & Dark Modal Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -164,13 +164,11 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. ⚡ SISTEM POP-UP MODAL CUSTOM (DARK MODE PREMIUM) - ANTI PROMPT JADUL ──
+// ── 4. SISTEM POP-UP MODAL CUSTOM (DARK MODE PREMIUM) - ANTI PROMPT JADUL ──
 function showCustomFolderModal(callback) {
-  // Hapus modal lama jika ada duplikat gantung
   const oldModal = document.getElementById('customFolderModal');
   if(oldModal) oldModal.remove();
 
-  // Bikin elemen backdrop hitam buram overlay mutlak
   const overlay = document.createElement('div');
   overlay.id = 'customFolderModal';
   overlay.style.cssText = `
@@ -180,7 +178,6 @@ function showCustomFolderModal(callback) {
     padding: 20px; box-sizing: border-box; font-family: 'Space Mono', monospace;
   `;
 
-  // Bikin kotak box dialog bertema gelap pekat transparan mewah
   const box = document.createElement('div');
   box.style.cssText = `
     background: rgba(16, 20, 30, 0.98); border: 1px solid rgba(255,255,255,0.08);
@@ -188,17 +185,14 @@ function showCustomFolderModal(callback) {
     box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 16px;
   `;
 
-  // Judul Header Modal
   const title = document.createElement('h4');
   title.style.cssText = "margin: 0; font-size: 15px; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 8px;";
   title.innerHTML = `📁 Create Custom Folder`;
 
-  // Petunjuk Input
   const sub = document.createElement('p');
   sub.style.cssText = "margin: 0; font-size: 11px; color: #8b93b4; line-height: 1.4;";
   sub.textContent = "Enter a name for your private categorizing playlist folder:";
 
-  // Kolom Input (Background Gelap, Teks Putih Tajam)
   const input = document.createElement('input');
   input.type = "text";
   input.placeholder = "e.g. Chill, Lofi, Slow, Night...";
@@ -208,7 +202,6 @@ function showCustomFolderModal(callback) {
     outline: none; font-family: inherit; box-sizing: border-box;
   `;
   
-  // Bungkus Tombol Aksi Kanan-Kiri
   const actionWrap = document.createElement('div');
   actionWrap.style.cssText = "display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;";
 
@@ -227,7 +220,6 @@ function showCustomFolderModal(callback) {
     if(val) callback(val);
   };
 
-  // Rakit Komponen Modal
   actionWrap.appendChild(cancelBtn);
   actionWrap.appendChild(confirmBtn);
   box.appendChild(title);
@@ -237,7 +229,6 @@ function showCustomFolderModal(callback) {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 
-  // Fokus otomatis ke inputan teks biar user tinggal ketik instan
   setTimeout(() => input.focus(), 100);
 }
 
@@ -312,14 +303,12 @@ window.renderTagChips = function() {
       tagChips.appendChild(btn);
     });
 
-    // SUNTIK TOMBOL [+ FOLDER] - DIHUBUNGKAN KE POP-UP CUSTOM PREMIUM ANTI-PROMPT
     const addFolderBtn = document.createElement('button');
     addFolderBtn.className = 'chip';
     addFolderBtn.style.cssText = "border: 1px dashed var(--accent-2) !important; color: var(--accent-2) !important; font-weight: 700 !important; white-space: nowrap !important;";
     addFolderBtn.innerHTML = `➕ Folder`;
     
     addFolderBtn.onclick = () => {
-      // Panggil sistem modal buatan sendiri (Gak pake prompt jadul browser)
       showCustomFolderModal((folderName) => {
         let customCreatedFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
         if (!customCreatedFolders.includes(folderName)) {
@@ -388,6 +377,21 @@ window.openDetailModal = function(id) {
   moveFolderContainer.appendChild(label);
   moveFolderContainer.appendChild(select);
   detailPlatforms.appendChild(moveFolderContainer);
+};
+
+// ── 7. ⚡ FIX UTAMA: TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU COLO-COLO PALING ATAS GRID ⚡ ──
+window.combineAndRender = function() {
+  const markedLocal = localSongs.map(s => ({ ...s, isLocal: true, pinned: pinnedOfficialIds.includes(s.id) }));
+  
+  // Kita paksa susun ulang: Urutkan array lagu local & cloud yang paling baru ditambahkan (addedAt tertinggi) 
+  // ditaruh mutlak di paling atas sebelum lagu-lagu official statis bawaan json dibaca.
+  const sortedLocalAndCloud = [...cloudSongs, ...markedLocal].sort((a, b) => {
+    return new Date(b.addedAt || 0) - new Date(a.addedAt || 0);
+  });
+
+  // Gabungkan hasil sorting terbaru di barisan paling atas grid
+  songs = [...sortedLocalAndCloud, ...officialSongs];
+  renderAll();
 };
 
 setTimeout(() => { if(typeof renderTagChips === 'function') renderTagChips(); }, 400);
