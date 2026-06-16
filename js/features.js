@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (SMART CUSTOM FOLDERS MANAGER)
+   AMZ LIAN — Playlist  ·  features.js (FIXED HEADER LAYOUT)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! Folder Manager & Smart Form Saving Active.");
+console.log("⚡ features.js loaded! Premium Control Player & Clean Layout Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -164,64 +164,66 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. ⚡ FITUR BARU: INJEKSI TOMBOL [+ FOLDER] DI SEBELAH FILTER BAR ⚡ ──
+// ── 4. ⚡ AMANKAN TATA LETAK FOLDER & TOMBOL [+ FOLDER] AGAR TIDAK MENUTUPI HEADER ⚡ ──
 function injectAddFolderButton() {
-  if (!folderBar || document.getElementById('btnAddCustomFolder')) return;
+  // Kita taruh tombol +Folder di area customFolderTitle agar tidak menabrak / merusak folderBar utama
+  if (!customFolderTitle || document.getElementById('btnAddCustomFolder')) return;
   
+  customFolderTitle.style.cssText = "font-size:12px; color:var(--subtle); margin-bottom:8px; margin-top:16px; display:flex; align-items:center; justify-content:between; width:100%;";
+  customFolderTitle.innerHTML = `<span>📁 Your Custom Folders:</span>`;
+
   const addFolderBtn = document.createElement('button');
   addFolderBtn.id = 'btnAddCustomFolder';
   addFolderBtn.style.cssText = `
-    padding: 8px 14px; border-radius: 12px; font-size: 13px;
+    padding: 4px 10px; border-radius: 8px; font-size: 11px;
     border: 1px dashed var(--accent-2); background: transparent;
-    color: var(--accent-2); font-weight: 600; white-space: nowrap;
-    cursor: pointer; transition: 0.2s; margin-left: auto;
+    color: var(--accent-2); font-weight: 600; cursor: pointer; transition: 0.2s;
   `;
-  addFolderBtn.innerHTML = `➕ Folder`;
+  addFolderBtn.innerHTML = `[+ Folder]`;
   
   addFolderBtn.onclick = () => {
     const folderName = prompt("Enter new custom folder name:");
     if (!folderName || !folderName.trim()) return;
     
-    // Simpan daftar folder buatan sendiri ke localStorage biar permanen
     let customCreatedFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
     if (!customCreatedFolders.includes(folderName.trim())) {
       customCreatedFolders.push(folderName.trim());
       localStorage.setItem('amz_custom_folders', JSON.stringify(customCreatedFolders));
       showToast(`📁 Folder "${folderName.trim()}" created!`);
-      
-      // Paksa render ulang agar foldernya langsung muncul di list atas
       if (typeof combineAndRender === 'function') combineAndRender();
       else renderAll();
     } else {
       alert("Folder already exists!");
     }
   };
-  folderBar.appendChild(addFolderBtn);
+  customFolderTitle.appendChild(addFolderBtn);
 }
 
-// Timpa fungsi render tag chips bawaan agar membaca folder yang telah dibuat pengguna
+// Timpa fungsi render tag chips agar layout penampung terpisah secara bersih dari header utama
 const originalRenderTagChips = window.renderTagChips;
 window.renderTagChips = function() {
   if (typeof originalRenderTagChips === 'function') originalRenderTagChips();
   
-  // Ambil folder kustom dari database lokal lagu dan folder buatan dari localStorage
   const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
   const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
   const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
   
-  if (tagChips && totalFolders.length > 0) {
-    customFolderTitle.style.display = 'block';
-    // Bersihkan isi tag lama bawaan biar gak double
+  if (totalFolders.length > 0 || createdFolders.length > 0) {
+    if(customFolderTitle) customFolderTitle.style.setProperty('display', 'flex', 'important');
+    injectAddFolderButton();
+  } else {
+    if(customFolderTitle) customFolderTitle.style.display = 'none';
+  }
+
+  if (tagChips && (totalFolders.length > 0)) {
     tagChips.innerHTML = '';
     
-    // Render Tombol Default All Folders
     const allBtn = document.createElement('button');
     allBtn.className = `chip${activeTag === '' ? ' active' : ''}`;
     allBtn.textContent = 'All Folders';
     allBtn.onclick = () => { activeTag = ''; renderAll(); };
     tagChips.appendChild(allBtn);
 
-    // Suntik folder-folder kustom ke baris penyaring utama
     totalFolders.forEach(tag => {
       const btn = document.createElement('button');
       btn.className = `chip${activeTag === tag ? ' active' : ''}`;
@@ -230,24 +232,20 @@ window.renderTagChips = function() {
       tagChips.appendChild(btn);
     });
   }
-  injectAddFolderButton();
 };
 
-// ── 5. ⚡ FITUR BARU: MANAGEMENT PINDAH FOLDER PADA DETAIL MODAL LAGU ⚡ ──
+// ── 5. MANAGEMENT PINDAH FOLDER PADA DETAIL MODAL LAGU ──
 const originalOpenDetailModal = window.openDetailModal;
 window.openDetailModal = function(id) {
   if (typeof originalOpenDetailModal === 'function') originalOpenDetailModal(id);
   
   const song = songs.find(s => s.id === id);
-  // Fitur pindah folder hanya berlaku untuk lagu privat (Local)
   if (!song || !song.isLocal || !detailPlatforms) return;
   
-  // Ambil semua daftar folder yang tersedia
   const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
   const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
   const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
 
-  // Buat element pembungkus UI Pindah Folder
   const moveFolderContainer = document.createElement('div');
   moveFolderContainer.style.cssText = "margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 8px;";
   
@@ -258,7 +256,6 @@ window.openDetailModal = function(id) {
   const select = document.createElement('select');
   select.style.cssText = "width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; cursor: pointer;";
   
-  // Option default kosongan
   const defOpt = document.createElement('option');
   defOpt.value = "";
   defOpt.textContent = `-- Select Target Folder (Current: ${song.tags && song.tags[0] ? song.tags[0] : 'None'}) --`;
@@ -272,14 +269,12 @@ window.openDetailModal = function(id) {
     select.appendChild(opt);
   });
 
-  // Handler Event saat Folder dipilih (Langsung pindah tempat instan)
   select.onchange = (e) => {
     const targetFolder = e.target.value;
     if (!targetFolder) return;
     
     const localIdx = localSongs.findIndex(s => s.id === song.id);
     if (localIdx !== -1) {
-      // Masukan target folder baru ke dalam field tags lagu local tersebut
       localSongs[localIdx].tags = [targetFolder];
       saveLocalData();
       combineAndRender();
@@ -293,5 +288,5 @@ window.openDetailModal = function(id) {
   detailPlatforms.appendChild(moveFolderContainer);
 };
 
-// Jalankan injeksi awal saat file pertama kali dimuat
-setTimeout(() => { injectAddFolderButton(); }, 500);
+// Jalankan injeksi awal secara aman
+setTimeout(() => { if(typeof renderTagChips === 'function') renderTagChips(); }, 400);
