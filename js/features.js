@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (FIXED HEADER LAYOUT)
+   AMZ LIAN — Playlist  ·  features.js (MOBILE RESPONSIVE FIXED)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! Premium Control Player & Clean Layout Active.");
+console.log("⚡ features.js loaded! Mobile Header Layout Fixed.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -99,7 +99,7 @@ window.playCurrentQueueIndex = function() {
   }
 };
 
-// ── 3. TIMPA PROSES DAN TOMBOL SAVE PADA FORM (ANTI-PROMPT & PASSWORD BYPASS) ──
+// ── 3. TIMPA PROSES DAN TOMBOL SAVE PADA FORM PENGISI ──
 if (formSaveBtn) {
   const formFooter = formSaveBtn.parentNode;
   if (formFooter) {
@@ -164,12 +164,11 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. ⚡ AMANKAN TATA LETAK FOLDER & TOMBOL [+ FOLDER] AGAR TIDAK MENUTUPI HEADER ⚡ ──
+// ── 4. ⚡ STRATEGI FIX MOBILE LAYOUT: KUNCI SCROLLBAR HORIZONTAL &TAMPILAN AMAN ⚡ ──
 function injectAddFolderButton() {
-  // Kita taruh tombol +Folder di area customFolderTitle agar tidak menabrak / merusak folderBar utama
   if (!customFolderTitle || document.getElementById('btnAddCustomFolder')) return;
   
-  customFolderTitle.style.cssText = "font-size:12px; color:var(--subtle); margin-bottom:8px; margin-top:16px; display:flex; align-items:center; justify-content:between; width:100%;";
+  customFolderTitle.style.cssText = "font-size:12px; color:var(--subtle); margin-bottom:8px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; width:100%; padding:0 4px;";
   customFolderTitle.innerHTML = `<span>📁 Your Custom Folders:</span>`;
 
   const addFolderBtn = document.createElement('button');
@@ -199,11 +198,27 @@ function injectAddFolderButton() {
   customFolderTitle.appendChild(addFolderBtn);
 }
 
-// Timpa fungsi render tag chips agar layout penampung terpisah secara bersih dari header utama
-const originalRenderTagChips = window.renderTagChips;
 window.renderTagChips = function() {
-  if (typeof originalRenderTagChips === 'function') originalRenderTagChips();
-  
+  // ⚡ AMANKAN CONTAINER UTAMA (HEADER BAR) SUPAYA OTOMATIS MENYESUAIKAN TINGGI DI HP
+  const header = document.querySelector('.site-header');
+  if (header) {
+    header.style.setProperty('height', 'auto', 'important');
+    header.style.setProperty('position', 'sticky', 'important');
+  }
+
+  // ⚡ AMANKAN BARISAN CHIPS AGAR BISA DI-SCROLL KE SAMPING (TIDAK MELAR KE BAWAH DI HP)
+  if (tagChips) {
+    tagChips.style.cssText = `
+      display: flex !important;
+      gap: 8px !important;
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
+      padding-bottom: 4px !important;
+      width: 100% !important;
+      flex-wrap: nowrap !important;
+    `;
+  }
+
   const createdFolders = JSON.parse(localStorage.getItem('amz_custom_folders')) || [];
   const existingSongTags = [...new Set(songs.filter(s => s.isLocal).flatMap(s => s.tags || []))];
   const totalFolders = [...new Set([...createdFolders, ...existingSongTags])].sort();
@@ -215,7 +230,7 @@ window.renderTagChips = function() {
     if(customFolderTitle) customFolderTitle.style.display = 'none';
   }
 
-  if (tagChips && (totalFolders.length > 0)) {
+  if (tagChips) {
     tagChips.innerHTML = '';
     
     const allBtn = document.createElement('button');
@@ -288,5 +303,4 @@ window.openDetailModal = function(id) {
   detailPlatforms.appendChild(moveFolderContainer);
 };
 
-// Jalankan injeksi awal secara aman
 setTimeout(() => { if(typeof renderTagChips === 'function') renderTagChips(); }, 400);
