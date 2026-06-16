@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (ADVANCED FOLDER PRO ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (FOLDER ENGINE WITH CLEAN REMOVER)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! Advanced Folder Management & Access Controls Active.");
+console.log("⚡ features.js loaded! Advanced Folder Management & Smart Deletion Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY ──
 window.runLivePlayer = function(song) {
@@ -20,19 +20,10 @@ window.playCurrentQueueIndex = function() {
   
   if(miniPlayer) {
     miniPlayer.style.cssText = `
-      position: fixed !important;
-      bottom: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      z-index: 999 !important; 
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      background: rgba(10, 12, 18, 0.95) !important;
-      backdrop-filter: blur(30px) !important;
-      border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
-      padding: 14px 28px !important;
-      box-shadow: 0 -10px 40px rgba(0,0,0,0.6) !important;
+      position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; z-index: 999 !important; 
+      display: flex !important; align-items: center !important; justify-content: space-between !important;
+      background: rgba(10, 12, 18, 0.95) !important; backdrop-filter: blur(30px) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.05) !important; padding: 14px 28px !important; box-shadow: 0 -10px 40px rgba(0,0,0,0.6) !important;
     `;
     miniPlayer.hidden = false;
   }
@@ -56,15 +47,15 @@ window.playCurrentQueueIndex = function() {
     playerFrameContainer.innerHTML = `
       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; padding:0 15px; font-family:'Space Mono', monospace;">
         <div class="custom-controls" style="display:flex; align-items:center; gap:24px; margin-bottom:10px;">
-          <button id="nxShuffle" title="Shuffle" style="background:none; border:none; color:${isShuffle ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; letter-spacing:-1px; cursor:pointer; transition:0.2s;">[SHF]</button>
-          <button id="nxPrev" title="Previous" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; letter-spacing:-2px;">&lt;&lt;|</button>
-          <button id="nxPlay" title="Play/Stop" style="background:#fff; border:none; color:#000; width:38px; height:38px; border-radius:50%; font-size:11px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(255,255,255,0.3); transition:0.2s;">⏳</button>
-          <button id="nxNext" title="Next" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; letter-spacing:-2px;">|&gt;&gt;</button>
-          <button id="nxRepeat" title="Repeat" style="background:none; border:none; color:${isRepeat ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; letter-spacing:-1px; cursor:pointer; transition:0.2s;">[RPT]</button>
+          <button id="nxShuffle" style="background:none; border:none; color:${isShuffle ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; cursor:pointer;">[SHF]</button>
+          <button id="nxPrev" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">&lt;&lt;|</button>
+          <button id="nxPlay" style="background:#fff; border:none; color:#000; width:38px; height:38px; border-radius:50%; font-size:11px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(255,255,255,0.3);">⏳</button>
+          <button id="nxNext" style="background:none; border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">|&gt;&gt;</button>
+          <button id="nxRepeat" style="background:none; border:none; color:${isRepeat ? 'var(--accent)' : '#4d5675'}; font-size:13px; font-weight:700; cursor:pointer;">[RPT]</button>
         </div>
         <div class="player-progress-container" style="display:flex; align-items:center; gap:12px; width:100%;">
           <span id="nxCurr" style="font-size:11px; color:#6b7394; min-width:35px; text-align:right;">0:00</span>
-          <input id="nxProg" type="range" value="0" min="0" max="100" class="progress-bar" style="flex:1; accent-color:var(--accent); height:4px; background:rgba(255,255,255,0.1); border-radius:4px; cursor:pointer;" />
+          <input id="nxProg" type="range" value="0" min="0" max="100" style="flex:1; accent-color:var(--accent); height:4px; background:rgba(255,255,255,0.1); border-radius:4px; cursor:pointer;" />
           <span id="nxDur" style="font-size:11px; color:#6b7394; min-width:35px;">0:00</span>
         </div>
       </div>
@@ -77,8 +68,7 @@ window.playCurrentQueueIndex = function() {
     const nRepeat = document.getElementById('nxRepeat');
     const nProg = document.getElementById('nxProg');
     
-    nexusAudio.pause();
-    nexusAudio.src = "";
+    nexusAudio.pause(); nexusAudio.src = "";
     
     nexusAudio.onplay = () => { if(nPlay) { nPlay.innerHTML = "STP"; nPlay.style.background = "var(--danger)"; nPlay.style.color = "#fff"; nPlay.style.boxShadow = "0 0 15px var(--danger)"; } };
     nexusAudio.onpause = () => { if(nPlay) { nPlay.innerHTML = "EXE"; nPlay.style.background = "#fff"; nPlay.style.color = "#000"; nPlay.style.boxShadow = "0 0 15px rgba(255,255,255,0.3)"; } };
@@ -93,9 +83,7 @@ window.playCurrentQueueIndex = function() {
     
     fetchPreviewAudioUrl(song.title, song.artist).then(url => {
       nexusAudio.src = url; nexusAudio.play().catch(() => {});
-    }).catch(e => {
-      if(nPlay) nPlay.innerHTML = "ERR";
-    });
+    }).catch(e => { if(nPlay) nPlay.innerHTML = "ERR"; });
   }
 };
 
@@ -119,14 +107,12 @@ if (formSaveBtn) {
       const title = fTitle ? fTitle.value.trim() : '';
       const artist = fArtist ? fArtist.value.trim() : '';
       if (!title || !artist) {
-        if (formError) { fError.textContent = "Title and Artist are required!"; formError.hidden = false; }
+        if (formError) { formError.textContent = "Title and Artist are required!"; formError.hidden = false; }
         return null;
       }
       const links = {
-        youtubeMusic: fYoutubeMusic ? fYoutubeMusic.value.trim() : '',
-        spotify: fSpotify ? fSpotify.value.trim() : '',
-        appleMusic: fAppleMusic ? fAppleMusic.value.trim() : '',
-        soundcloud: fSoundcloud ? fSoundcloud.value.trim() : ''
+        youtubeMusic: fYoutubeMusic ? fYoutubeMusic.value.trim() : '', spotify: fSpotify ? fSpotify.value.trim() : '',
+        appleMusic: fAppleMusic ? fAppleMusic.value.trim() : '', soundcloud: fSoundcloud ? fSoundcloud.value.trim() : ''
       };
       const tags = fTags ? fTags.value.split(',').map(t => t.trim()).filter(Boolean) : [];
       return { title, artist, links, tags };
@@ -164,84 +150,58 @@ if (formSaveBtn) {
   }
 }
 
-// ── 4. POP-UP MODAL CUSTOM DENGAN KONTROL AKSES (PRIVAT / PUBLIK) ──
+// ── 4. POP-UP MODAL BIKIN FOLDER BARU ──
 function showCustomFolderModal(callback) {
   const oldModal = document.getElementById('customFolderModal');
   if(oldModal) oldModal.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'customFolderModal';
-  overlay.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(15px);
-    z-index: 99999; display: flex; align-items: center; justify-content: center;
-    padding: 20px; box-sizing: border-box; font-family: 'Space Mono', monospace;
-  `;
+  overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(15px); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; font-family: 'Space Mono', monospace;";
 
   const box = document.createElement('div');
-  box.style.cssText = `
-    background: rgba(16, 20, 30, 0.98); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px; padding: 24px; width: 100%; max-width: 360px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 16px;
-  `;
+  box.style.cssText = "background: rgba(16, 20, 30, 0.98); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 16px;";
 
   const title = document.createElement('h4');
   title.style.cssText = "margin: 0; font-size: 15px; color: #fff; font-weight: 700;";
   title.innerHTML = `📁 Create New Folder`;
 
   const input = document.createElement('input');
-  input.type = "text";
-  input.placeholder = "Folder Name (e.g. Lofi, Chill)...";
+  input.type = "text"; input.placeholder = "Folder Name (e.g. Lofi, Chill)...";
   input.style.cssText = "width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; outline: none; box-sizing: border-box;";
   
-  // OPSI SELECTION AKSES PRIVAT / PUBLIC
   const accessLabel = document.createElement('label');
   accessLabel.style.cssText = "font-size: 11px; color: var(--accent-2); font-weight:600;";
   accessLabel.textContent = "🗺️ Folder Access Status:";
 
   const selectAccess = document.createElement('select');
   selectAccess.style.cssText = "width: 100%; background: #0c0f16; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; cursor: pointer;";
-  selectAccess.innerHTML = `
-    <option value="private">🔒 Private (Local Save Only)</option>
-    <option value="public">👥 Public (Global Cloud Folder)</option>
-  `;
+  selectAccess.innerHTML = `<option value="private">🔒 Private (Local Save Only)</option><option value="public">👥 Public (Global Cloud Folder)</option>`;
 
   const actionWrap = document.createElement('div');
   actionWrap.style.cssText = "display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;";
 
   const cancelBtn = document.createElement('button');
-  cancelBtn.textContent = "Cancel";
-  cancelBtn.style.cssText = "background: transparent; border: none; color: #8b93b4; font-size: 12px; cursor: pointer; padding: 8px 12px;";
+  cancelBtn.textContent = "Cancel"; cancelBtn.style.cssText = "background: transparent; border: none; color: #8b93b4; font-size: 12px; cursor: pointer; padding: 8px 12px;";
   cancelBtn.onclick = () => overlay.remove();
 
   const confirmBtn = document.createElement('button');
-  confirmBtn.textContent = "Create";
-  confirmBtn.style.cssText = "background: var(--accent-2); border: none; color: #000; font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 16px; cursor: pointer;";
+  confirmBtn.textContent = "Create"; confirmBtn.style.cssText = "background: var(--accent-2); border: none; color: #000; font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 16px; cursor: pointer;";
   
   confirmBtn.onclick = () => {
-    const val = input.value.trim();
-    const access = selectAccess.value;
-    overlay.remove();
+    const val = input.value.trim(); const access = selectAccess.value; overlay.remove();
     if(val) callback(val, access);
   };
 
-  actionWrap.appendChild(cancelBtn);
-  actionWrap.appendChild(confirmBtn);
-  box.appendChild(title);
-  box.appendChild(input);
-  box.appendChild(accessLabel);
-  box.appendChild(selectAccess);
-  box.appendChild(actionWrap);
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-
+  actionWrap.appendChild(cancelBtn); actionWrap.appendChild(confirmBtn);
+  box.appendChild(title); box.appendChild(input); box.appendChild(accessLabel); box.appendChild(selectAccess); box.appendChild(actionWrap);
+  overlay.appendChild(box); document.body.appendChild(overlay);
   setTimeout(() => input.focus(), 100);
 }
 
-// ── ⚡ FITUR BARU: POP-UP MODAL SELEKSI JALUR CEPAT TAMBAH LAGU KE FOLDER LU ──
+// ── ⚡ 5. MODAL JALUR CEPAT: DILENGKAPI FITUR ADD DAN REMOVE (HAPUS MUSIK DARI FOLDER) ──
 function showQuickAddTracksModal(folderName) {
-  const old = document.getElementById('quickAddModal');
-  if(old) old.remove();
+  const old = document.getElementById('quickAddModal'); if(old) old.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'quickAddModal';
@@ -252,33 +212,48 @@ function showQuickAddTracksModal(folderName) {
 
   const title = document.createElement('h4');
   title.style.cssText = "margin:0; font-size:14px; color:#fff; font-weight:700;";
-  title.textContent = `➕ Add Songs to 📁 ${folderName}`;
+  title.textContent = `⚙️ Manage Songs: 📁 ${folderName}`;
 
   const listWrap = document.createElement('div');
   listWrap.style.cssText = "flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; max-height:45vh;";
 
-  // Ambil daftar lagu yang BELUM masuk ke folder ini
-  const availableSongs = songs.filter(s => !s.tags || !s.tags.includes(folderName));
+  songs.forEach(song => {
+    const inFolder = song.tags && song.tags.includes(folderName);
+    
+    const row = document.createElement('div');
+    row.style.cssText = "display:flex; align-items:center; justify-content:space-between; background:#0c0f16; border:1px solid rgba(255,255,255,0.03); padding:10px; border-radius:10px;";
+    
+    row.innerHTML = `
+      <div style="flex:1; min-width:0; padding-right:10px;">
+        <div style="font-size:12px; color:#fff; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.title}</div>
+        <div style="font-size:11px; color:${inFolder ? 'var(--accent)' : '#6b7394'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.artist} ${inFolder ? '• [Inside Folder]' : ''}</div>
+      </div>
+      <button style="background:${inFolder ? 'var(--danger)' : 'var(--accent)'}; border:none; color:${inFolder ? '#fff' : '#000'}; font-size:10px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer; min-width:75px;">
+        ${inFolder ? '❌ REMOVE' : '➕ ADD'}
+      </button>
+    `;
 
-  if(availableSongs.length === 0) {
-    listWrap.innerHTML = `<div style="font-size:11px; color:#6b7394; text-align:center; padding:20px;">All existing songs are already in this folder.</div>`;
-  } else {
-    availableSongs.forEach(song => {
-      const row = document.createElement('div');
-      row.style.cssText = "display:flex; align-items:center; justify-content:between; background:#0c0f16; border:1px solid rgba(255,255,255,0.03); padding:10px; border-radius:10px; cursor:pointer; transition:0.2s;";
-      row.innerHTML = `
-        <div style="flex:1; min-width:0; padding-right:10px;">
-          <div style="font-size:12px; color:#fff; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.title}</div>
-          <div style="font-size:11px; color:#6b7394; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.artist}</div>
-        </div>
-        <button style="background:var(--accent); border:none; color:#000; font-size:11px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer;">+ ADD</button>
-      `;
-      row.onclick = () => {
-        // Jika Lagu berasal dari Public (Cloud / Firebase)
+    // Aksi Klik Tombol Pintar ADD / REMOVE Musik
+    row.querySelector('button').onclick = (e) => {
+      e.stopPropagation();
+      if (inFolder) {
+        // PROSES KELUARKAN MUSIK DARI FOLDER INI
+        if (!song.isLocal && db) {
+          const remTags = (song.tags || []).filter(t => t !== folderName);
+          db.ref('songs/' + song.id).update({ tags: remTags });
+        } else {
+          const idx = localSongs.findIndex(ls => ls.id === song.id);
+          if (idx !== -1 && localSongs[idx].tags) {
+            localSongs[idx].tags = localSongs[idx].tags.filter(t => t !== folderName);
+            saveLocalData();
+          }
+        }
+        showToast(`🗑️ Removed "${song.title}" from ${folderName}`);
+      } else {
+        // PROSES MASUKKAN MUSIK KE FOLDER INI
         if (!song.isLocal && db) {
           db.ref('songs/' + song.id).update({ tags: [...(song.tags || []), folderName] });
         } else {
-          // Jika Lagu berasal dari Private (Local Storage)
           const idx = localSongs.findIndex(ls => ls.id === song.id);
           if (idx !== -1) {
             if(!localSongs[idx].tags) localSongs[idx].tags = [];
@@ -287,61 +262,39 @@ function showQuickAddTracksModal(folderName) {
           }
         }
         showToast(`✅ Added "${song.title}" to ${folderName}!`);
-        overlay.remove();
-        combineAndRender();
-      };
-      listWrap.appendChild(row);
-    });
-  }
+      }
+      overlay.remove(); combineAndRender();
+      setTimeout(() => showQuickAddTracksModal(folderName), 150); // Buka ulang biar kelihatan up-to-date
+    };
+    listWrap.appendChild(row);
+  });
 
   const closeBtn = document.createElement('button');
   closeBtn.textContent = "Close Panel";
-  closeBtn.style.cssText = "width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.05); color:#fff; border-radius:8px; padding:10px; font-size:12px; font-weight:600; cursor:pointer; margin-top:4px;";
+  closeBtn.style.cssText = "width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.05); color:#fff; border-radius:8px; padding:10px; font-size:12px; font-weight:600; cursor:pointer;";
   closeBtn.onclick = () => overlay.remove();
 
-  box.appendChild(title);
-  box.appendChild(listWrap);
-  box.appendChild(closeBtn);
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
+  box.appendChild(title); box.appendChild(listWrap); box.appendChild(closeBtn);
+  overlay.appendChild(box); document.body.appendChild(overlay);
 }
 
-// ── 5. LEBUR FILTER UTAMA DAN CUSTOM FOLDER JADI 1 BARIS HORIZONTAL ──
+// ── 6. RENDER DATA FILTER UTAMA & CUSTOM FOLDER SECARA HORIZONTAL ──
 window.renderTagChips = function() {
   if (customFolderTitle) customFolderTitle.style.display = 'none';
   if (folderBar) folderBar.style.display = 'none'; 
 
   const header = document.querySelector('.site-header');
-  if (header) {
-    header.style.setProperty('height', 'auto', 'important');
-    header.style.setProperty('position', 'sticky', 'important');
-  }
+  if (header) { header.style.setProperty('height', 'auto', 'important'); header.style.setProperty('position', 'sticky', 'important'); }
 
   if (tagChips) {
     const parent = tagChips.parentNode;
     if (parent && !document.getElementById('navScrollWrapper')) {
-      const wrapper = document.createElement('div');
-      wrapper.id = 'navScrollWrapper';
-      wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block;";
-      
-      const fadeIndicator = document.createElement('div');
-      fadeIndicator.style.cssText = "position: absolute; right: 0; top: 0; height: 100%; width: 50px; background: linear-gradient(to right, transparent, rgba(10,12,18,0.9)); pointer-events: none; z-index: 10; border-right: 2px solid var(--accent-2);";
-      
-      parent.insertBefore(wrapper, tagChips);
-      wrapper.appendChild(tagChips);
-      wrapper.appendChild(fadeIndicator);
+      const wrapper = document.createElement('div'); wrapper.id = 'navScrollWrapper'; wrapper.style.cssText = "position: relative; width: 100%; margin: 10px 0; display: block;";
+      const fadeIndicator = document.createElement('div'); fadeIndicator.style.cssText = "position: absolute; right: 0; top: 0; height: 100%; width: 50px; background: linear-gradient(to right, transparent, rgba(10,12,18,0.9)); pointer-events: none; z-index: 10; border-right: 2px solid var(--accent-2);";
+      parent.insertBefore(wrapper, tagChips); wrapper.appendChild(tagChips); wrapper.appendChild(fadeIndicator);
     }
 
-    tagChips.style.cssText = `
-      display: flex !important;
-      gap: 8px !important;
-      overflow-x: auto !important;
-      scrollbar-width: none !important;
-      padding: 6px 40px 6px 4px !important;
-      width: 100% !important;
-      flex-wrap: nowrap !important;
-      -webkit-overflow-scrolling: touch !important;
-    `;
+    tagChips.style.cssText = "display: flex !important; gap: 8px !important; overflow-x: auto !important; scrollbar-width: none !important; padding: 6px 40px 6px 4px !important; width: 100% !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important;";
     tagChips.innerHTML = '';
 
     const mainFilters = [
@@ -352,19 +305,15 @@ window.renderTagChips = function() {
     ];
 
     mainFilters.forEach(f => {
-      const btn = document.createElement('button');
-      btn.className = `chip${f.active ? ' active' : ''}`;
-      btn.style.setProperty('white-space', 'nowrap', 'important');
-      btn.innerHTML = f.label;
+      const btn = document.createElement('button'); btn.className = `chip${f.active ? ' active' : ''}`;
+      btn.style.setProperty('white-space', 'nowrap', 'important'); btn.innerHTML = f.label;
       btn.onclick = () => { activeFolder = f.id; activeTag = ''; renderAll(); };
       tagChips.appendChild(btn);
     });
 
-    const divider = document.createElement('div');
-    divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;";
+    const divider = document.createElement('div'); divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;";
     tagChips.appendChild(divider);
 
-    // Ambil metadata folder kustom terdaftar
     const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
     const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
     const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
@@ -373,25 +322,54 @@ window.renderTagChips = function() {
       const meta = createdFoldersData[tag] || { access: 'private' };
       const prefix = meta.access === 'public' ? '👥' : '📁';
       
-      const btn = document.createElement('button');
-      btn.className = `chip${activeTag === tag ? ' active' : ''}`;
-      btn.style.setProperty('white-space', 'nowrap', 'important');
-      btn.textContent = `${prefix} ${tag}`;
+      const btn = document.createElement('button'); btn.className = `chip${activeTag === tag ? ' active' : ''}`;
+      btn.style.setProperty('white-space', 'nowrap', 'important'); btn.textContent = `${prefix} ${tag}`;
       btn.onclick = () => { activeTag = tag; renderAll(); };
       tagChips.appendChild(btn);
     });
 
-    // JIKA USER SEDANG MEMBUKA FOLDER KUSTOM, SUNTIK TOMBOL CEPAT JALUR CEPAT `[+]` DI SEBELAHNYA
+    // JIKA SEDANG MEMBUKA FOLDER KUSTOM -> SUNTIK TOMBOL SAKTI MENGELOLA ISI & TOMBOL HAPUS FOLDER
     if (activeTag !== '') {
+      // 1. Tombol Kelola Musik [+]
       const quickAddBtn = document.createElement('button');
       quickAddBtn.className = 'chip';
       quickAddBtn.style.cssText = "background: var(--surface) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight:800 !important; white-space:nowrap !important;";
-      quickAddBtn.innerHTML = `[+] Add Song to ${activeTag}`;
+      quickAddBtn.innerHTML = `[+] Manage Songs`;
       quickAddBtn.onclick = () => showQuickAddTracksModal(activeTag);
       tagChips.appendChild(quickAddBtn);
+
+      // 2. Tombol Hapus Total Folder [🗑️]
+      const deleteFolderBtn = document.createElement('button');
+      deleteFolderBtn.className = 'chip';
+      deleteFolderBtn.style.cssText = "background: rgba(255, 75, 75, 0.1) !important; border: 1px solid var(--danger) !important; color: var(--danger) !important; font-weight:800 !important; white-space:nowrap !important;";
+      deleteFolderBtn.innerHTML = `🗑️ Delete Folder`;
+      deleteFolderBtn.onclick = () => {
+        if(confirm(`Are you sure you want to completely delete the folder "${activeTag}"?\n(Note: This won't delete your actual songs).`)) {
+          // Bersihkan tag folder ini dari semua lagu local
+          localSongs.forEach((s, idx) => {
+            if(s.tags && s.tags.includes(activeTag)) {
+              localSongs[idx].tags = s.tags.filter(t => t !== activeTag);
+            }
+          });
+          saveLocalData();
+
+          // Hapus nama folder dari metadata kustom
+          let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
+          if(customFoldersMeta[activeTag]) {
+            delete customFoldersMeta[activeTag];
+            localStorage.setItem('amz_folders_meta', JSON.stringify(customFoldersMeta));
+          }
+
+          showToast(`🗑️ Folder "${activeTag}" successfully deleted.`);
+          activeTag = ''; // Kembalikan pandangan ke home
+          activeFolder = 'all';
+          combineAndRender();
+        }
+      };
+      tagChips.appendChild(deleteFolderBtn);
     }
 
-    // TOMBOL UTAMA BUAT [+ FOLDER] BARU 
+    // TOMBOL UTAMA BUAT BIKIN (+ FOLDER) BARU 
     const addFolderBtn = document.createElement('button');
     addFolderBtn.className = 'chip';
     addFolderBtn.style.cssText = "border: 1px dashed var(--accent-2) !important; color: var(--accent-2) !important; font-weight: 700 !important; white-space: nowrap !important;";
@@ -401,27 +379,22 @@ window.renderTagChips = function() {
       showCustomFolderModal((folderName, access) => {
         let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
         if (!customFoldersMeta[folderName]) {
-          // Daftarkan nama folder dan tingkat aksesnya ke memori
           customFoldersMeta[folderName] = { access: access, createdAt: new Date().toISOString() };
           localStorage.setItem('amz_folders_meta', JSON.stringify(customFoldersMeta));
           showToast(`📁 Folder "${folderName}" (${access}) created!`);
           combineAndRender();
-        } else {
-          alert("Folder name already exists!");
-        }
+        } else { alert("Folder name already exists!"); }
       });
     };
     tagChips.appendChild(addFolderBtn);
   }
 };
 
-// ── 6. MANAGEMENT PINDAH FOLDER PADA DETAIL MODAL LAGU ──
+// ── 7. MANAGEMENT PINDAH FOLDER PADA DETAIL MODAL LAGU ──
 const originalOpenDetailModal = window.openDetailModal;
 window.openDetailModal = function(id) {
   if (typeof originalOpenDetailModal === 'function') originalOpenDetailModal(id);
-  
-  const song = songs.find(s => s.id === id);
-  if (!song || !detailPlatforms) return;
+  const song = songs.find(s => s.id === id); if (!song || !detailPlatforms) return;
   
   const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
   const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
@@ -430,55 +403,40 @@ window.openDetailModal = function(id) {
   const moveFolderContainer = document.createElement('div');
   moveFolderContainer.style.cssText = "margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 8px;";
   
-  const label = document.createElement('label');
-  label.style.cssText = "font-size: 12px; color: var(--accent-2); font-weight: 600;";
+  const label = document.createElement('label'); label.style.cssText = "font-size: 12px; color: var(--accent-2); font-weight: 600;";
   label.textContent = "⚙️ Move Track to Folder:";
   
   const select = document.createElement('select');
   select.style.cssText = "width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; cursor: pointer;";
   
-  const defOpt = document.createElement('option');
-  defOpt.value = "";
-  defOpt.textContent = `-- Select Target Folder (Current: ${song.tags && song.tags[0] ? song.tags[0] : 'None'}) --`;
+  const defOpt = document.createElement('option'); defOpt.value = ""; defOpt.textContent = `-- Select Target Folder --`;
   select.appendChild(defOpt);
   
   totalFolders.forEach(folder => {
-    const opt = document.createElement('option');
-    opt.value = folder;
-    opt.textContent = `📁 ${folder}`;
+    const opt = document.createElement('option'); opt.value = folder; opt.textContent = `📁 ${folder}`;
     if (song.tags && song.tags.includes(folder)) opt.selected = true;
     select.appendChild(opt);
   });
 
   select.onchange = (e) => {
-    const targetFolder = e.target.value;
-    if (!targetFolder) return;
-    
-    if (!song.isLocal && db) {
-      db.ref('songs/' + song.id).update({ tags: [targetFolder] });
-    } else {
+    const targetFolder = e.target.value; if (!targetFolder) return;
+    if (!song.isLocal && db) { db.ref('songs/' + song.id).update({ tags: [targetFolder] }); } 
+    else {
       const localIdx = localSongs.findIndex(s => s.id === song.id);
-      if (localIdx !== -1) {
-        localSongs[localIdx].tags = [targetFolder];
-        saveLocalData();
-      }
+      if (localIdx !== -1) { localSongs[localIdx].tags = [targetFolder]; saveLocalData(); }
     }
-    combineAndRender();
-    closeModalsWithBack();
+    combineAndRender(); closeModalsWithBack();
     showToast(`📦 Moved "${song.title}" to folder ${targetFolder}!`);
   };
 
-  moveFolderContainer.appendChild(label);
-  moveFolderContainer.appendChild(select);
+  moveFolderContainer.appendChild(label); moveFolderContainer.appendChild(select);
   detailPlatforms.appendChild(moveFolderContainer);
 };
 
-// ── 7. TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU MEJENG PALING ATAS GRID ──
+// ── 8. TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU MEJENG PALING ATAS GRID ──
 window.combineAndRender = function() {
   const markedLocal = localSongs.map(s => ({ ...s, isLocal: true, pinned: pinnedOfficialIds.includes(s.id) }));
-  const sortedLocalAndCloud = [...cloudSongs, ...markedLocal].sort((a, b) => {
-    return new Date(b.addedAt || 0) - new Date(a.addedAt || 0);
-  });
+  const sortedLocalAndCloud = [...cloudSongs, ...markedLocal].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
   songs = [...sortedLocalAndCloud, ...officialSongs];
   renderAll();
 };
