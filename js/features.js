@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (YT MUSIC BLUR & SPREAD HOME ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (3 MAJOR FOLDERS ENGINE)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! Glow Logo, Spread Home Menu, & YT Music Adaptive Blur Active.");
+console.log("⚡ features.js loaded! Glow Logo, 3 Major Folders (WePlaylist, MyPlaylist, MyFavorite) Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY (DENGAN ENGINE ADAPTIVE BLUR YT MUSIC) ──
 window.runLivePlayer = function(song) {
@@ -253,12 +253,12 @@ function showQuickAddTracksModal(folderName) {
   closeBtn.onclick = () => overlay.remove(); box.appendChild(title); box.appendChild(listWrap); box.appendChild(closeBtn); overlay.appendChild(box); document.body.appendChild(overlay);
 }
 
-// ── 6. ENGINE CORE: PREMIUM NAVIGATION & GLOW LOGO INJECTION ──
+// ── 6. ENGINE CORE: PREMIUM NAVIGATION & 3 MAJOR FOLDERS INJECTION ──
 window.renderTagChips = function() {
   if (customFolderTitle) customFolderTitle.style.display = 'none';
   if (folderBar) folderBar.style.display = 'none'; 
 
-  // 💎 6A. SUNTIK LOGO NEON GLOWING DI KIRI ATAS (TANPA EMOTICON)
+  // 💎 6A. SUNTIK LOGO NEON GLOWING DI KIRI ATAS
   const logoBrand = document.querySelector('.logo') || document.querySelector('.brand-logo');
   if (logoBrand) {
     logoBrand.style.cssText = `
@@ -284,18 +284,13 @@ window.renderTagChips = function() {
       const styleAnim = document.createElement('style'); 
       styleAnim.innerHTML = `
         @keyframes pulseGlow { 0%, 100% { opacity:0.4; transform:translateX(0); } 50% { opacity:1; transform:translateX(3px); } } 
-        .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; position: relative; } 
+        .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; position: relative; font-weight: 700 !important; } 
         .chip:active { transform: scale(0.92) !important; }
-        .spread-box { display: none; background: #10141e !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 12px; padding: 8px; position: absolute; top: 45px; left: 0; z-index: 999999 !important; flex-direction: column; gap: 6px; box-shadow: 0 15px 35px rgba(0,0,0,0.9) !important; width: 150px; animation: slideSpread 0.25s ease-out forwards; overflow: visible !important; }
-        @keyframes slideSpread { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-        .spread-item { background: transparent; border: none; color: #fff !important; padding: 10px 14px; font-size: 13px; text-align: left; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; transition: 0.2s; }
-        .spread-item:hover, .spread-item.active { background: rgba(255,255,255,0.15); color: #00ffcc !important; }
       `; 
       document.head.appendChild(styleAnim);
       parent.insertBefore(wrapper, tagChips); wrapper.appendChild(tagChips); wrapper.appendChild(fadeIndicator);
     }
 
-    // Memaksa overflow-y agar visible, sehingga dropdown menyebar dengan aman tanpa terpotong layout kontainer induk
     tagChips.style.cssText = "display: flex !important; gap: 8px !important; overflow-x: auto !important; scrollbar-width: none !important; padding: 6px 55px 6px 4px !important; width: 100% !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scroll-behavior: smooth !important; touch-action: pan-x !important; position: relative; overflow-y: visible !important;";
     tagChips.innerHTML = '';
     tagChips.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: true});
@@ -305,58 +300,31 @@ window.renderTagChips = function() {
       setTimeout(() => { tagChips.scrollTo({ left: 60, behavior: 'smooth' }); setTimeout(() => tagChips.scrollTo({ left: 0, behavior: 'smooth' }), 500); }, 400);
     }
 
-    // 🧠 6B. REKAYASA SAKTI: DROPDOWN MENU SPREAD UTK HOME MENU (Z-INDEX ANTI-POTONG + ANTI-EMOT)
-    const homeContainerBtn = document.createElement('div');
-    homeContainerBtn.style.cssText = "position: relative; display: inline-block; overflow: visible !important; z-index: 999999 !important;";
-
-    const homeToggle = document.createElement('button');
-    const isMainActive = ['all','public','private','favorite'].includes(activeFolder) && activeTag === '';
-    homeToggle.className = `chip${isMainActive ? ' active' : ''}`;
-    homeToggle.innerHTML = `Home Menu ▾`;
-    
-    // Bikin Container Spread yang bisa pecah menyebar ke bawah
-    const spreadBox = document.createElement('div');
-    spreadBox.className = "spread-box";
-    spreadBox.id = "homeSpreadBox";
-
-    const items = [
-      { id: 'all', label: 'All Tracks' },
-      { id: 'public', label: 'Public' },
-      { id: 'private', label: 'Private' },
-      { id: 'favorite', label: 'Favorites' }
+    // 🧠 6B. REKAYASA BARU: TAMPILKAN 3 FOLDER BESAR DI DEPAN (TANPA DROPDOWN)
+    const majorFolders = [
+      { id: 'public', label: 'WePlaylist' },
+      { id: 'private', label: 'MyPlaylist' },
+      { id: 'favorite', label: 'MyFavorite' }
     ];
 
-    items.forEach(item => {
-      const sBtn = document.createElement('button');
-      sBtn.className = `spread-item${activeFolder === item.id && activeTag === '' ? ' active' : ''}`;
-      sBtn.innerHTML = item.label;
-      sBtn.onclick = (e) => {
-        e.stopPropagation();
-        activeFolder = item.id; activeTag = '';
-        spreadBox.style.display = 'none';
+    majorFolders.forEach(folder => {
+      const fBtn = document.createElement('button');
+      const isFolderActive = activeFolder === folder.id && activeTag === '';
+      fBtn.className = `chip${isFolderActive ? ' active' : ''}`;
+      fBtn.style.cssText = "font-size: 14px !important; padding: 10px 18px !important; text-transform: uppercase; letter-spacing: 0.5px;";
+      fBtn.innerHTML = folder.label;
+      fBtn.onclick = () => {
+        activeFolder = folder.id; 
+        activeTag = '';
         renderAll();
+        fBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       };
-      spreadBox.appendChild(sBtn);
+      tagChips.appendChild(fBtn);
     });
-
-    homeToggle.onclick = (e) => {
-      e.stopPropagation();
-      const currentDisplay = spreadBox.style.display;
-      document.querySelectorAll('.spread-box').forEach(b => b.style.display = 'none'); // Tutup dropdown lain
-      spreadBox.style.display = currentDisplay === 'flex' ? 'none' : 'flex';
-      homeToggle.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    };
-
-    // Auto close menu jika klik area bebas di luar layar
-    document.addEventListener('click', () => { spreadBox.style.display = 'none'; });
-
-    homeContainerBtn.appendChild(homeToggle);
-    homeContainerBtn.appendChild(spreadBox);
-    tagChips.appendChild(homeContainerBtn);
 
     const divider = document.createElement('div'); divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;"; tagChips.appendChild(divider);
 
-    // C. ISI DAFTAR CUSTOM FOLDER
+    // C. ISI DAFTAR CUSTOM FOLDER TAMBAHAN (JIKA ADA)
     const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
     const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
     const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
@@ -384,13 +352,13 @@ window.renderTagChips = function() {
           localSongs.forEach((s, idx) => { if(s.tags && s.tags.includes(activeTag)) localSongs[idx].tags = s.tags.filter(t => t !== activeTag); }); saveLocalData();
           let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
           if(customFoldersMeta[activeTag]) { delete customFoldersMeta[activeTag]; localStorage.setItem('amz_folders_meta', JSON.stringify(customFoldersMeta)); }
-          showToast(`Folder deleted.`); activeTag = ''; activeFolder = 'all'; combineAndRender();
+          showToast(`Folder deleted.`); activeTag = ''; activeFolder = 'public'; combineAndRender();
         }
       };
       tagChips.appendChild(deleteFolderBtn);
     }
 
-    // E. TOMBOL TAMBAH FOLDER BARU (+ Folder / Add Song)
+    // E. TOMBOL TAMBAH FOLDER BARU (+ Folder)
     const addFolderBtn = document.createElement('button'); addFolderBtn.className = 'chip';
     addFolderBtn.style.cssText = "border: 1px dashed var(--accent-2) !important; color: var(--accent-2) !important; font-weight: 700 !important; white-space: nowrap !important;";
     addFolderBtn.innerHTML = `+ Folder`;
@@ -445,5 +413,10 @@ window.combineAndRender = function() {
   songs = [...sortedLocalAndCloud, ...officialSongs];
   renderAll();
 };
+
+// Pastikan sistem fallback default adalah salah satu folder utama (public / WePlaylist) jika 'all' tidak didefinisikan di UI utama
+if (typeof activeFolder !== 'undefined' && activeFolder === 'all') {
+  activeFolder = 'public';
+}
 
 setTimeout(() => { if(typeof renderTagChips === 'function') renderTagChips(); }, 400);
