@@ -4,6 +4,15 @@
 
 'use strict';
 
+// ── ⚡ FUNGSI SPLASH SCREEN ⚡ ──
+window.dismissSplash = function() {
+  const splash = document.getElementById('splashScreen');
+  if(splash) {
+    splash.style.opacity = '0';
+    setTimeout(() => { splash.style.display = 'none'; }, 800);
+  }
+};
+
 // ── CONNECT TO FIREBASE DATABASE ──
 const firebaseConfig = {
   apiKey: "AIzaSyAUrKFV1gKd92Pmhum6s8gqVC2hi91JbHo",
@@ -15,7 +24,9 @@ const firebaseConfig = {
   appId: "1:889161528054:web:9a8e59fac0607b4f8732d7"
 };
 
-firebase.initializeApp(firebaseConfig);
+try {
+  firebase.initializeApp(firebaseConfig);
+} catch (e) {}
 const db = firebase.database();
 
 const LOCAL_STORAGE_KEY = 'amzLianPlaylist_LocalSongs';
@@ -87,8 +98,6 @@ const fCover         = document.getElementById('fCover');
 const fCoverFile     = document.getElementById('fCoverFile');
 const coverPreview   = document.getElementById('coverPreview');
 const fTags          = document.getElementById('fTags');
-
-// YOUTUBE REMOVED
 const fYoutubeMusic  = document.getElementById('fYoutubeMusic');
 const fSpotify       = document.getElementById('fSpotify');
 const fAppleMusic    = document.getElementById('fAppleMusic');
@@ -102,15 +111,19 @@ const playerArtist = document.getElementById('playerArtist');
 const playerFrameContainer = document.getElementById('playerFrameContainer');
 const closePlayer = document.getElementById('closePlayer');
 
-// ── FOLDER UI ──
+// ── MEMBUAT UI FOLDER UTAMA SECARA OTOMATIS ──
 const folderBar = document.createElement('div');
 folderBar.style.cssText = "display: flex; gap: 10px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); scrollbar-width: none;";
-tagChips.parentNode.insertBefore(folderBar, tagChips);
+if(tagChips && tagChips.parentNode) {
+  tagChips.parentNode.insertBefore(folderBar, tagChips);
+}
 
 const customFolderTitle = document.createElement('div');
 customFolderTitle.style.cssText = "font-size:12px; color:var(--subtle); margin-bottom:8px; margin-top:10px; display:none;";
 customFolderTitle.textContent = "📁 Your Custom Folders:";
-tagChips.parentNode.insertBefore(customFolderTitle, tagChips);
+if(tagChips && tagChips.parentNode) {
+  tagChips.parentNode.insertBefore(customFolderTitle, tagChips);
+}
 
 const FOLDERS = [
   { id: 'all', label: '🏠 Home', color: '#fff' },
@@ -147,8 +160,8 @@ const PLATFORMS_CONFIG = [
 ];
 
 function sanitizeText(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-function showToast(msg) { clearTimeout(toastTimer); toast.textContent = msg; toast.hidden = false; toastTimer = setTimeout(() => { toast.hidden = true; }, 2500); }
-function closeModalsUI() { detailOverlay.hidden = true; formOverlay.hidden = true; }
+function showToast(msg) { clearTimeout(toastTimer); if(toast) { toast.textContent = msg; toast.hidden = false; toastTimer = setTimeout(() => { toast.hidden = true; }, 2500); } }
+function closeModalsUI() { if(detailOverlay) detailOverlay.hidden = true; if(formOverlay) formOverlay.hidden = true; }
 function closeModalsWithBack() { closeModalsUI(); if (window.history.state && window.history.state.modal) window.history.back(); }
 window.addEventListener('popstate', (e) => { if (!e.state || !e.state.modal) closeModalsUI(); });
 
@@ -214,6 +227,7 @@ function getFilteredSorted() {
 }
 
 function renderTagChips() {
+  if(!tagChips) return;
   const visibleSongs = [...songs];
   let folderFiltered = visibleSongs;
   if (activeFolder === 'public') folderFiltered = visibleSongs.filter(s => s.isCloud || s.isOfficial);
@@ -271,15 +285,15 @@ async function fetchFromExternalServer(query) {
 }
 
 async function fetchForFormAutofill(query) {
-  if (!query || query.trim().length < 2) { fAutoSearchResults.innerHTML = ''; return; }
+  if (!query || query.trim().length < 2) { if(fAutoSearchResults) fAutoSearchResults.innerHTML = ''; return; }
   try {
     const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=5`);
     if (!response.ok) return;
     const data = await response.json();
-    fAutoSearchResults.innerHTML = '';
+    if(fAutoSearchResults) fAutoSearchResults.innerHTML = '';
     
     if(data.results.length === 0) {
-      fAutoSearchResults.innerHTML = `<p style="padding:10px; font-size:12px; color:var(--muted)">No results.</p>`;
+      if(fAutoSearchResults) fAutoSearchResults.innerHTML = `<p style="padding:10px; font-size:12px; color:var(--muted)">No results.</p>`;
       return;
     }
 
@@ -298,22 +312,22 @@ async function fetchForFormAutofill(query) {
       row.onmouseleave = () => row.style.background = "var(--card)";
       
       row.onclick = () => {
-        fTitle.value = item.trackName;
-        fArtist.value = item.artistName;
-        fCover.value = highResCover;
+        if(fTitle) fTitle.value = item.trackName;
+        if(fArtist) fArtist.value = item.artistName;
+        if(fCover) fCover.value = highResCover;
         updateCoverPreview(highResCover);
         
         const searchStr = encodeURIComponent(item.trackName + ' ' + item.artistName);
-        fYoutubeMusic.value = `https://music.youtube.com/search?q=${searchStr}`;
-        fSpotify.value = `https://open.spotify.com/search/${searchStr}`;
-        fAppleMusic.value = item.trackViewUrl || `https://music.apple.com/search?term=${searchStr}`;
-        fSoundcloud.value = `https://soundcloud.com/search?q=${searchStr}`;
+        if(fYoutubeMusic) fYoutubeMusic.value = `https://music.youtube.com/search?q=${searchStr}`;
+        if(fSpotify) fSpotify.value = `https://open.spotify.com/search/${searchStr}`;
+        if(fAppleMusic) fAppleMusic.value = item.trackViewUrl || `https://music.apple.com/search?term=${searchStr}`;
+        if(fSoundcloud) fSoundcloud.value = `https://soundcloud.com/search?q=${searchStr}`;
 
-        fAutoSearch.value = '';
-        fAutoSearchResults.innerHTML = '';
+        if(fAutoSearch) fAutoSearch.value = '';
+        if(fAutoSearchResults) fAutoSearchResults.innerHTML = '';
         showToast("⚡ Links auto-filled successfully!");
       };
-      fAutoSearchResults.appendChild(row);
+      if(fAutoSearchResults) fAutoSearchResults.appendChild(row);
     });
   } catch (e) { console.warn(e); }
 }
@@ -353,7 +367,7 @@ function buildCard(song) {
         ${song.isExternal 
           ? `<button class="card-btn card-btn-play" data-action="toggle-ext-menu" style="flex:1; background:var(--accent); font-size:11px;">🔍 Search Links</button>
              <button class="card-btn" style="padding:0 8px; font-size:11px; border:1px solid var(--accent-2); color:var(--accent-2);" onclick="event.stopPropagation(); quickAddFromExternal('${sanitizeText(song.title).replace(/'/g, "\\'")}', '${sanitizeText(song.artist).replace(/'/g, "\\'")}', '${hasCover}')">➕ Save</button>`
-          : `<button class="card-btn card-btn-play" data-action="toggle-menu" style="width:100%;">▶ Play / Menu</button>`
+          : `<button class="card-btn card-btn-play" data-action="toggle-menu" style="width:100%;">▶ Menu</button>`
         }
         <div class="player-dropdown" id="dropdown-${song.id}" hidden></div>
       </div>
@@ -389,12 +403,6 @@ function buildCard(song) {
     });
 
   } else {
-    const optDirect = document.createElement('button');
-    optDirect.className = 'dropdown-opt dropdown-opt-main';
-    optDirect.innerHTML = `⚡ Play in Web`;
-    optDirect.onclick = (e) => { e.stopPropagation(); runLivePlayer(song); dropdown.hidden = true; };
-    dropdown.appendChild(optDirect);
-
     if (song.links) {
       PLATFORMS_CONFIG.forEach(p => {
         if (song.links[p.key]) {
@@ -428,12 +436,13 @@ document.addEventListener('click', () => {
 });
 
 function renderAll() {
+  if(!playlistGrid) return;
   renderTagChips();
   const list = getFilteredSorted();
   playlistGrid.innerHTML = '';
 
-  if (songs.length === 0 && externalSearchResults.length === 0 && !searchQuery) { emptyState.hidden = false; return; }
-  emptyState.hidden = true;
+  if (songs.length === 0 && externalSearchResults.length === 0 && !searchQuery) { if(emptyState) emptyState.hidden = false; return; }
+  if(emptyState) emptyState.hidden = true;
 
   if (searchQuery) {
     const localHeader = document.createElement('div');
@@ -468,237 +477,60 @@ function renderAll() {
   }
 }
 
-searchInput.oninput = (e) => { 
-  searchQuery = e.target.value; 
-  clearSearch.hidden = !searchQuery; 
-  renderAll(); 
+if(searchInput) {
+  searchInput.oninput = (e) => { 
+    searchQuery = e.target.value; 
+    if(clearSearch) clearSearch.hidden = !searchQuery; 
+    renderAll(); 
 
-  clearTimeout(searchTimeout);
-  if (searchQuery.trim().length >= 2) {
-    searchTimeout = setTimeout(() => {
-      fetchFromExternalServer(searchQuery);
-    }, 700); 
-  } else {
-    externalSearchResults = [];
-    renderAll();
-  }
-};
+    clearTimeout(searchTimeout);
+    if (searchQuery.trim().length >= 2) {
+      searchTimeout = setTimeout(() => {
+        fetchFromExternalServer(searchQuery);
+      }, 700); 
+    } else {
+      externalSearchResults = [];
+      renderAll();
+    }
+  };
+}
 
-clearSearch.onclick = () => { searchQuery = ''; searchInput.value = ''; clearSearch.hidden = true; externalSearchResults = []; renderAll(); };
-
-fAutoSearch.oninput = (e) => {
-  const query = e.target.value;
-  clearTimeout(formAutofillTimeout);
-  if (query.trim().length >= 2) {
-    formAutofillTimeout = setTimeout(() => { fetchForFormAutofill(query); }, 500);
-  } else {
-    fAutoSearchResults.innerHTML = '';
-  }
-};
+if(clearSearch) {
+  clearSearch.onclick = () => { searchQuery = ''; searchInput.value = ''; clearSearch.hidden = true; externalSearchResults = []; renderAll(); };
+}
 
 window.quickAddFromExternal = function(title, artist, coverUrl) {
   openFormModal();
-  fTitle.value = title;
-  fArtist.value = artist;
-  fCover.value = coverUrl;
+  if(fTitle) fTitle.value = title;
+  if(fArtist) fArtist.value = artist;
+  if(fCover) fCover.value = coverUrl;
   updateCoverPreview(coverUrl);
   
   const searchStr = encodeURIComponent(title + ' ' + artist);
-  fYoutubeMusic.value = `https://music.youtube.com/search?q=${searchStr}`;
-  fSpotify.value = `https://open.spotify.com/search/${searchStr}`;
-  fAppleMusic.value = `https://music.apple.com/search?term=${searchStr}`;
-  fSoundcloud.value = `https://soundcloud.com/search?q=${searchStr}`;
+  if(fYoutubeMusic) fYoutubeMusic.value = `https://music.youtube.com/search?q=${searchStr}`;
+  if(fSpotify) fSpotify.value = `https://open.spotify.com/search/${searchStr}`;
+  if(fAppleMusic) fAppleMusic.value = `https://music.apple.com/search?term=${searchStr}`;
+  if(fSoundcloud) fSoundcloud.value = `https://soundcloud.com/search?q=${searchStr}`;
   
   showToast("📋 Links auto-filled successfully!");
 };
 
-// ── ⚡ AUDIO ENGINE NEXUS (FULL AUDIO TANPA IKLAN, PROXY BYPASS) ──
-
-function formatTime(s) {
-  if(isNaN(s) || s < 0) return "0:00";
-  const min = Math.floor(s/60);
-  const sec = Math.floor(s%60);
-  return min + ":" + (sec < 10 ? "0"+sec : sec);
-}
-
-// Setup Event Listener untuk Nexus Audio (hanya dideklarasikan sekali)
-nexusAudio.ontimeupdate = () => {
-  const nProg = document.getElementById('nxProg');
-  const nCurr = document.getElementById('nxCurr');
-  const nDur = document.getElementById('nxDur');
-  if(nProg && nCurr && nDur && nexusAudio.duration) {
-    nProg.value = (nexusAudio.currentTime / nexusAudio.duration) * 100;
-    nCurr.textContent = formatTime(nexusAudio.currentTime);
-    nDur.textContent = formatTime(nexusAudio.duration);
-  }
-};
-
-nexusAudio.onplay = () => { const btn = document.getElementById('nxPlay'); if(btn) btn.innerHTML = "⏸"; };
-nexusAudio.onpause = () => { const btn = document.getElementById('nxPlay'); if(btn && nexusAudio.src) btn.innerHTML = "▶"; };
-
-nexusAudio.onended = () => {
-  if(isRepeat) { 
-    nexusAudio.currentTime = 0; 
-    nexusAudio.play(); 
-  } else { 
-    const nNext = document.getElementById('nxNext'); 
-    if(nNext) nNext.click(); 
-  }
-};
-
-async function fetchRawAudioUrl(title, artist) {
-  const query = encodeURIComponent(`${title} ${artist} audio`);
-  
-  // 1. Mencari lewat JioSaavn (dengan Proxy ByPass CORS)
-  try {
-    const targetUrl = `https://saavn.dev/api/search/songs?query=${query}&limit=1`;
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-    const res = await fetch(proxyUrl);
-    const data = await res.json();
-    if (data?.success && data?.data?.results?.length > 0) {
-      const urls = data.data.results[0].downloadUrl;
-      if (urls && urls.length > 0) return urls[urls.length - 1].url;
-    }
-  } catch(e) {}
-
-  // 2. Mencari lewat Piped Server Cadangan (dengan Proxy Bypass CORS)
-  const pipedInstances = ['https://pipedapi.kavin.rocks', 'https://pipedapi.tokhmi.xyz'];
-  for (const instance of pipedInstances) {
-    try {
-      const pTarget = `${instance}/search?q=${query}&filter=music_songs`;
-      const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(pTarget)}`);
-      const data = await res.json();
-      if (data.items && data.items.length > 0) {
-        const videoId = data.items[0].url.split('v=')[1];
-        const sTarget = `${instance}/streams/${videoId}`;
-        const streamRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(sTarget)}`);
-        const streamData = await streamRes.json();
-        const audioStream = streamData.audioStreams.find(s => s.mimeType.includes('mp4') || s.mimeType.includes('m4a')) || streamData.audioStreams[0];
-        if (audioStream && audioStream.url) return audioStream.url; // Berhasil dapat link mentah!
-      }
-    } catch (e) { continue; }
-  }
-  
-  throw new Error("Not found");
-}
-
-function runLivePlayer(song) {
-  const trackList = getFilteredSorted();
-  currentQueue = [...trackList];
-  currentQueueIndex = currentQueue.findIndex(s => s.id === song.id);
-  if(currentQueueIndex === -1) { currentQueue.push(song); currentQueueIndex = currentQueue.length - 1; }
-  playCurrentQueueIndex();
-}
-
-function playCurrentQueueIndex() {
-  if(currentQueueIndex < 0 || currentQueueIndex >= currentQueue.length) return;
-  const song = currentQueue[currentQueueIndex];
-  
-  playerTitle.textContent = song.title;
-  playerArtist.textContent = song.artist;
-  miniPlayer.hidden = false;
-  
-  // SUNTIK PANEL KONTROL KE DALAM HTML LAMA
-  playerFrameContainer.innerHTML = `
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; width:100%; padding:0 15px;">
-      <div style="display:flex; align-items:center; gap:18px; margin-bottom:6px;">
-        <button id="nxShuffle" style="background:none; border:none; color:${isShuffle ? 'var(--accent)' : 'var(--muted)'}; font-size:16px; cursor:pointer;">🔀</button>
-        <button id="nxPrev" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">⏮</button>
-        <button id="nxPlay" style="background:var(--accent); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;">⏳</button>
-        <button id="nxNext" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">⏭</button>
-        <button id="nxRepeat" style="background:none; border:none; color:${isRepeat ? 'var(--accent)' : 'var(--muted)'}; font-size:16px; cursor:pointer;">🔁</button>
-      </div>
-      <div style="display:flex; align-items:center; gap:10px; width:100%;">
-        <span id="nxCurr" style="font-size:11px; color:var(--muted); font-family:monospace; min-width:35px; text-align:right;">0:00</span>
-        <input id="nxProg" type="range" value="0" min="0" max="100" style="flex:1; accent-color:var(--accent); height:4px; cursor:pointer; background:rgba(255,255,255,0.1); border-radius:4px;" />
-        <span id="nxDur" style="font-size:11px; color:var(--muted); font-family:monospace; min-width:35px;">0:00</span>
-      </div>
-    </div>
-  `;
-  
-  const nPlay = document.getElementById('nxPlay');
-  const nNext = document.getElementById('nxNext');
-  const nPrev = document.getElementById('nxPrev');
-  const nShuffle = document.getElementById('nxShuffle');
-  const nRepeat = document.getElementById('nxRepeat');
-  const nProg = document.getElementById('nxProg');
-  const nDur = document.getElementById('nxDur');
-  
-  nexusAudio.pause();
-  nexusAudio.src = "";
-  
-  nPlay.onclick = () => { if(nexusAudio.paused) nexusAudio.play(); else nexusAudio.pause(); };
-  
-  nNext.onclick = () => {
-    if(isShuffle) currentQueueIndex = Math.floor(Math.random() * currentQueue.length);
-    else currentQueueIndex = (currentQueueIndex + 1) % currentQueue.length;
-    playCurrentQueueIndex();
-  };
-  
-  nPrev.onclick = () => {
-    currentQueueIndex--;
-    if(currentQueueIndex < 0) currentQueueIndex = currentQueue.length - 1;
-    playCurrentQueueIndex();
-  };
-  
-  nShuffle.onclick = () => { 
-    isShuffle = !isShuffle; 
-    nShuffle.style.color = isShuffle ? 'var(--accent)' : 'var(--muted)'; 
-  };
-  
-  nRepeat.onclick = () => { 
-    isRepeat = !isRepeat; 
-    nRepeat.style.color = isRepeat ? 'var(--accent)' : 'var(--muted)'; 
-  };
-  
-  nProg.oninput = () => { 
-    if(nexusAudio.duration) nexusAudio.currentTime = (nProg.value / 100) * nexusAudio.duration; 
-  };
-  
-  // Proses Tarik Musik
-  fetchRawAudioUrl(song.title, song.artist).then(url => {
-    nexusAudio.src = url;
-    nexusAudio.play().then(() => { nPlay.innerHTML = "⏸"; }).catch(() => { nPlay.innerHTML = "▶"; });
-  }).catch(e => {
-    nPlay.innerHTML = "❌";
-    nDur.textContent = "Err";
-    showToast("⚠️ Failed to extract full audio from server.");
-  });
-}
-
-closePlayer.onclick = () => { 
-  miniPlayer.hidden = true; 
-  playerFrameContainer.innerHTML = ''; 
-  nexusAudio.pause();
-  nexusAudio.src = '';
-};
-
-// ── Modals Lanjutan ──
+// ── Modals Setup ──
 function openDetailModal(id) {
   const song = songs.find(s => s.id === id);
   if (!song) return;
   currentSongId = id;
 
-  detailCover.src = (song.cover && song.cover.trim()) ? song.cover : COVER_PLACEHOLDER;
-  detailTitle.textContent = song.title;
-  detailArtist.textContent = song.artist;
+  if(detailCover) detailCover.src = (song.cover && song.cover.trim()) ? song.cover : COVER_PLACEHOLDER;
+  if(detailTitle) detailTitle.textContent = song.title;
+  if(detailArtist) detailArtist.textContent = song.artist;
 
-  if (song.isOfficial) detailTags.innerHTML = `<span class="detail-tag" style="background:var(--accent-2); color:#000;">🌐 Official</span>`;
-  else if (song.isCloud) detailTags.innerHTML = `<span class="detail-tag" style="background:var(--accent); color:#fff;">👥 Public Playlist</span>`;
-  else detailTags.innerHTML = `<span class="detail-tag" style="background:#555; color:#fff;">🔒 Private Local</span>`;
+  if (song.isOfficial) { if(detailTags) detailTags.innerHTML = `<span class="detail-tag" style="background:var(--accent-2); color:#000;">🌐 Official</span>`; }
+  else if (song.isCloud) { if(detailTags) detailTags.innerHTML = `<span class="detail-tag" style="background:var(--accent); color:#fff;">👥 Public Playlist</span>`; }
+  else { if(detailTags) detailTags.innerHTML = `<span class="detail-tag" style="background:#555; color:#fff;">🔒 Private Local</span>`; }
 
-  detailPlatforms.innerHTML = '';
-  const mainPlayBtn = document.createElement('button');
-  mainPlayBtn.className = 'platform-btn';
-  mainPlayBtn.style.background = 'var(--accent)';
-  mainPlayBtn.style.borderColor = 'var(--accent)';
-  mainPlayBtn.style.color = '#fff';
-  mainPlayBtn.style.width = '100%';
-  mainPlayBtn.style.marginBottom = '12px';
-  mainPlayBtn.innerHTML = `⚡ <span>Play in Web</span>`;
-  mainPlayBtn.onclick = () => { runLivePlayer(song); closeModalsWithBack(); };
-  detailPlatforms.appendChild(mainPlayBtn);
-
+  if(detailPlatforms) detailPlatforms.innerHTML = '';
+  
   if (song.links) {
     PLATFORMS_CONFIG.forEach(p => {
       if (song.links[p.key]) {
@@ -708,168 +540,214 @@ function openDetailModal(id) {
         btn.style.marginBottom = '6px';
         btn.innerHTML = `${p.icon} <span>Open in ${p.label}</span>`;
         btn.onclick = () => window.open(song.links[p.key], '_blank');
-        detailPlatforms.appendChild(btn);
+        if(detailPlatforms) detailPlatforms.appendChild(btn);
       }
     });
   }
 
-  if (song.isOfficial) { detailEditBtn.hidden = true; detailDeleteBtn.hidden = true; } 
-  else { detailEditBtn.hidden = false; detailDeleteBtn.hidden = false; }
+  if (song.isOfficial) { 
+    if(detailEditBtn) detailEditBtn.hidden = true; 
+    if(detailDeleteBtn) detailDeleteBtn.hidden = true; 
+  } 
+  else { 
+    if(detailEditBtn) detailEditBtn.hidden = false; 
+    if(detailDeleteBtn) detailDeleteBtn.hidden = false; 
+  }
 
-  detailPinBtn.textContent = song.pinned ? '⭐ Unpin' : '☆ Favorite';
-  detailOverlay.hidden = false;
+  if(detailPinBtn) detailPinBtn.textContent = song.pinned ? '⭐ Unpin' : '☆ Favorite';
+  if(detailOverlay) detailOverlay.hidden = false;
 
   if (!window.history.state || window.history.state.modal !== 'detail') {
     window.history.pushState({ modal: 'detail' }, "");
   }
 }
 
-detailClose.onclick = () => closeModalsWithBack();
+if(detailClose) detailClose.onclick = () => closeModalsWithBack();
 
-detailEditBtn.onclick = () => { 
-  detailOverlay.hidden = true; 
-  if (window.history.state && window.history.state.modal === 'detail') {
-    window.history.replaceState({ modal: 'form' }, "");
-  }
-  openFormModal(currentSongId); 
-};
-
-detailDeleteBtn.onclick = () => { 
-  const song = songs.find(s => s.id === currentSongId);
-  if (song.isCloud) {
-    const pass = prompt("Enter Admin Password to delete:");
-    if (pass !== ADMIN_PASSWORD) { alert("❌ Access denied!"); return; }
-    db.ref('songs/' + currentSongId).remove().then(() => { showToast("🗑️ Deleted from Cloud!"); closeModalsWithBack(); });
-  } else {
-    if(confirm("Delete this song from private playlist?")) {
-      localSongs = localSongs.filter(s => s.id !== currentSongId);
-      saveLocalData(); combineAndRender(); closeModalsWithBack();
+if(detailEditBtn) {
+  detailEditBtn.onclick = () => { 
+    if(detailOverlay) detailOverlay.hidden = true; 
+    if (window.history.state && window.history.state.modal === 'detail') {
+      window.history.replaceState({ modal: 'form' }, "");
     }
-  }
-};
+    openFormModal(currentSongId); 
+  };
+}
 
-detailPinBtn.onclick = () => {
-  const song = songs.find(s => s.id === currentSongId);
-  song.pinned = !song.pinned;
-  if (song.isOfficial) {
-    if (song.pinned) pinnedOfficialIds.push(song.id);
-    else pinnedOfficialIds = pinnedOfficialIds.filter(id => id !== song.id);
-  }
-  saveLocalData(); combineAndRender(); closeModalsWithBack();
-};
+if(detailDeleteBtn) {
+  detailDeleteBtn.onclick = () => { 
+    const song = songs.find(s => s.id === currentSongId);
+    if (song.isCloud) {
+      const pass = prompt("Enter Admin Password:");
+      if (pass !== ADMIN_PASSWORD) { alert("❌ Access denied!"); return; }
+      db.ref('songs/' + currentSongId).remove().then(() => { showToast("🗑️ Deleted from Cloud!"); closeModalsWithBack(); });
+    } else {
+      if(confirm("Delete this song from private playlist?")) {
+        localSongs = localSongs.filter(s => s.id !== currentSongId);
+        saveLocalData(); combineAndRender(); closeModalsWithBack();
+      }
+    }
+  };
+}
 
-function updateCoverPreview(url) { if(url) { coverPreview.src = url; coverPreview.hidden = false; } else { coverPreview.hidden = true; } }
+if(detailPinBtn) {
+  detailPinBtn.onclick = () => {
+    const song = songs.find(s => s.id === currentSongId);
+    song.pinned = !song.pinned;
+    if (song.isOfficial) {
+      if (song.pinned) pinnedOfficialIds.push(song.id);
+      else pinnedOfficialIds = pinnedOfficialIds.filter(id => id !== song.id);
+    }
+    saveLocalData(); combineAndRender(); closeModalsWithBack();
+  };
+}
+
+function updateCoverPreview(url) { if(url) { if(coverPreview) {coverPreview.src = url; coverPreview.hidden = false;} } else { if(coverPreview) coverPreview.hidden = true; } }
 
 function openFormModal(id = null) {
-  formError.hidden = true;
-  fAutoSearch.value = ''; fAutoSearchResults.innerHTML = ''; 
+  if(formError) formError.hidden = true;
+  if(fAutoSearch) fAutoSearch.value = ''; 
+  if(fAutoSearchResults) fAutoSearchResults.innerHTML = ''; 
+  
   if (id) {
     const song = songs.find(s => s.id === id);
     if (!song) return;
     editingSongId = id;
-    formTitle.textContent = 'Edit Song';
-    fTitle.value = song.title; fArtist.value = song.artist; fCover.value = song.cover || '';
+    if(formTitle) formTitle.textContent = 'Edit Song';
+    if(fTitle) fTitle.value = song.title; 
+    if(fArtist) fArtist.value = song.artist; 
+    if(fCover) fCover.value = song.cover || '';
     updateCoverPreview(song.cover);
-    fTags.value = (song.tags || []).join(', ');
+    if(fTags) fTags.value = (song.tags || []).join(', ');
     
-    fYoutubeMusic.value = song.links?.youtubeMusic || ''; 
-    fSpotify.value = song.links?.spotify || '';
-    fAppleMusic.value = song.links?.appleMusic || ''; 
-    fSoundcloud.value = song.links?.soundcloud || '';
+    if(fYoutubeMusic) fYoutubeMusic.value = song.links?.youtubeMusic || ''; 
+    if(fSpotify) fSpotify.value = song.links?.spotify || '';
+    if(fAppleMusic) fAppleMusic.value = song.links?.appleMusic || ''; 
+    if(fSoundcloud) fSoundcloud.value = song.links?.soundcloud || '';
   } else {
     editingSongId = null;
-    formTitle.textContent = 'Add Song';
-    [fTitle, fArtist, fCover, fTags, fYoutubeMusic, fSpotify, fAppleMusic, fSoundcloud].forEach(el => el.value = '');
+    if(formTitle) formTitle.textContent = 'Add Song';
+    [fTitle, fArtist, fCover, fTags, fYoutubeMusic, fSpotify, fAppleMusic, fSoundcloud].forEach(el => {if(el) el.value = '';});
     updateCoverPreview('');
   }
-  formOverlay.hidden = false;
+  if(formOverlay) formOverlay.hidden = false;
 
-  const fTagsLabel = fTags.previousElementSibling;
-  if (fTagsLabel) fTagsLabel.innerHTML = '📁 Folders / Tags <span class="form-hint">(Optional)</span>';
-  fTags.placeholder = "e.g. Pop, Chill, Workout...";
+  if(fTags) {
+    const fTagsLabel = fTags.previousElementSibling;
+    if (fTagsLabel) fTagsLabel.innerHTML = '📁 Folders / Tags <span class="form-hint">(Optional)</span>';
+    fTags.placeholder = "e.g. Pop, Chill, Workout...";
+  }
 
   if (!window.history.state || window.history.state.modal !== 'form') {
     window.history.pushState({ modal: 'form' }, "");
   }
 }
 
-fCover.oninput = () => updateCoverPreview(fCover.value);
+if(fCover) fCover.oninput = () => updateCoverPreview(fCover.value);
 
-formClose.onclick = () => closeModalsWithBack();
-formCancelBtn.onclick = () => closeModalsWithBack();
+if(formClose) formClose.onclick = () => closeModalsWithBack();
+if(formCancelBtn) formCancelBtn.onclick = () => closeModalsWithBack();
 
-formSaveBtn.onclick = () => {
-  const title = fTitle.value.trim(), artist = fArtist.value.trim();
-  if(!title || !artist) { formError.textContent = "Title and Artist are required!"; formError.hidden = false; return; }
+if(formSaveBtn) {
+  formSaveBtn.onclick = () => {
+    const title = fTitle ? fTitle.value.trim() : '', artist = fArtist ? fArtist.value.trim() : '';
+    if(!title || !artist) { if(formError) { formError.textContent = "Title and Artist are required!"; formError.hidden = false; } return; }
 
-  const links = { youtubeMusic: fYoutubeMusic.value.trim(), spotify: fSpotify.value.trim(), appleMusic: fAppleMusic.value.trim(), soundcloud: fSoundcloud.value.trim() };
-  const tags = fTags.value.split(',').map(t => t.trim()).filter(Boolean);
+    const links = { 
+      youtubeMusic: fYoutubeMusic ? fYoutubeMusic.value.trim() : '', 
+      spotify: fSpotify ? fSpotify.value.trim() : '', 
+      appleMusic: fAppleMusic ? fAppleMusic.value.trim() : '', 
+      soundcloud: fSoundcloud ? fSoundcloud.value.trim() : '' 
+    };
+    const tags = fTags ? fTags.value.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-  const tipeAkses = prompt("Select upload access:\nType '1' for Private Folder\nType '2' for Public Folder");
+    const tipeAkses = prompt("Select upload access:\nType '1' for Private Folder\nType '2' for Public Folder");
 
-  if (tipeAkses === '2') {
-    const pass = prompt("Enter Admin Password:");
-    if (pass !== ADMIN_PASSWORD) { alert("❌ Access denied."); return; }
+    if (tipeAkses === '2') {
+      const pass = prompt("Enter Admin Password:");
+      if (pass !== ADMIN_PASSWORD) { alert("❌ Access denied."); return; }
 
-    if (editingSongId) {
-      db.ref('songs/' + editingSongId).update({ title, artist, cover: fCover.value.trim(), tags, links })
-        .then(() => showToast("✅ Public song updated!"));
-    } else {
-      db.ref('songs').push({ title, artist, cover: fCover.value.trim(), tags, links, addedAt: new Date().toISOString() })
-        .then(() => showToast("🚀 Added to Public Cloud!"));
-    }
-  } else if (tipeAkses === '1' || tipeAkses === null) {
-    if (editingSongId) {
-      const idx = localSongs.findIndex(s => s.id === editingSongId);
-      if(idx !== -1) localSongs[idx] = { ...localSongs[idx], title, artist, cover: fCover.value.trim(), tags, links };
-      showToast("🔒 Private song updated!");
-    } else {
-      localSongs.unshift({ id: 'local-' + Date.now(), title, artist, cover: fCover.value.trim(), tags, links, addedAt: new Date().toISOString() });
-      showToast("🔒 Saved to private playlist!");
-    }
-  } else {
-    alert("Invalid choice!"); return;
-  }
-
-  saveLocalData(); combineAndRender(); closeModalsWithBack();
-};
-
-exportBtn.onclick = () => {
-  if (localSongs.length === 0) { showToast("Private playlist is empty!"); return; }
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localSongs));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", "playlist_backup.json");
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-};
-importBtn.onclick = () => importFile.click();
-importFile.onchange = (e) => {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    try {
-      const parsed = JSON.parse(evt.target.result);
-      if (Array.isArray(parsed)) {
-        localSongs = [...parsed, ...localSongs];
-        saveLocalData(); combineAndRender(); showToast("✅ Import success!");
+      if (editingSongId) {
+        db.ref('songs/' + editingSongId).update({ title, artist, cover: fCover ? fCover.value.trim() : '', tags, links })
+          .then(() => showToast("✅ Public song updated!"));
+      } else {
+        db.ref('songs').push({ title, artist, cover: fCover ? fCover.value.trim() : '', tags, links, addedAt: new Date().toISOString() })
+          .then(() => showToast("🚀 Added to Public Cloud!"));
       }
-    } catch { showToast("❌ Invalid JSON file!"); }
+    } else if (tipeAkses === '1' || tipeAkses === null) {
+      if (editingSongId) {
+        const idx = localSongs.findIndex(s => s.id === editingSongId);
+        if(idx !== -1) localSongs[idx] = { ...localSongs[idx], title, artist, cover: fCover ? fCover.value.trim() : '', tags, links };
+        showToast("🔒 Private song updated!");
+      } else {
+        localSongs.unshift({ id: 'local-' + Date.now(), title, artist, cover: fCover ? fCover.value.trim() : '', tags, links, addedAt: new Date().toISOString() });
+        showToast("🔒 Saved to private playlist!");
+      }
+    } else {
+      alert("Invalid choice!"); return;
+    }
+
+    saveLocalData(); combineAndRender(); closeModalsWithBack();
   };
-  reader.readAsText(file);
+}
+
+if(exportBtn) {
+  exportBtn.onclick = () => {
+    if (localSongs.length === 0) { showToast("Private playlist is empty!"); return; }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localSongs));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "playlist_backup.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+}
+
+if(importBtn) importBtn.onclick = () => { if(importFile) importFile.click(); };
+
+if(importFile) {
+  importFile.onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const parsed = JSON.parse(evt.target.result);
+        if (Array.isArray(parsed)) {
+          localSongs = [...parsed, ...localSongs];
+          saveLocalData(); combineAndRender(); showToast("✅ Import success!");
+        }
+      } catch { showToast("❌ Invalid JSON file!"); }
+    };
+    reader.readAsText(file);
+  };
+}
+
+if(sortBtn) {
+  sortBtn.onclick = (e) => { 
+    e.stopPropagation(); 
+    sortPanelOpen = !sortPanelOpen; 
+    if(sortOptions) sortOptions.hidden = !sortPanelOpen; 
+  };
+}
+
+document.onclick = () => { 
+  if (sortPanelOpen) { 
+    sortPanelOpen = false; 
+    if(sortOptions) sortOptions.hidden = true; 
+  } 
 };
 
-sortBtn.onclick = (e) => { e.stopPropagation(); sortPanelOpen = !sortPanelOpen; sortOptions.hidden = !sortPanelOpen; };
-document.onclick = () => { if (sortPanelOpen) { sortPanelOpen = false; sortOptions.hidden = true; } };
-sortOptions.querySelectorAll('.sort-opt').forEach(btn => {
-  btn.onclick = (e) => {
-    e.stopPropagation(); sortMode = btn.dataset.sort;
-    sortOptions.querySelectorAll('.sort-opt').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active'); renderAll();
-  };
-});
+if(sortOptions) {
+  sortOptions.querySelectorAll('.sort-opt').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation(); sortMode = btn.dataset.sort;
+      sortOptions.querySelectorAll('.sort-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); renderAll();
+    };
+  });
+}
 
-addBtn.onclick = () => openFormModal();
+if(addBtn) addBtn.onclick = () => openFormModal();
 
 (async () => { await loadData(); })();
