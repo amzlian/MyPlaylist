@@ -68,14 +68,17 @@ pre { font-family: 'Space Mono', monospace; }
   border-bottom: 1px solid var(--border);
 }
 .header-inner {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
   padding: 14px 24px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
 }
+
 .brand {
   display: flex;
   align-items: baseline;
@@ -222,13 +225,15 @@ pre { font-family: 'Space Mono', monospace; }
 }
 .filter-bar::-webkit-scrollbar { display: none; }
 .filter-inner {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
   padding: 10px 24px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .tag-chips {
   display: flex;
   gap: 6px;

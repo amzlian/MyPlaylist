@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY & CASCADE DELETE ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY & NOW PLAYING COVER ENGINE)
 ═══════════════════════════════════════════════════ */
 
 console.log("⚡ features.js loaded! Strict Hierarchy, Random Track Logic & YT Music Blur Active.");
@@ -76,16 +76,17 @@ function applyYTMusicBlur(imgUrl) {
   };
 }
 
-// ── 2. TIMPA FUNGSI ANTREAN UTK HANDLING STICKY PLAYER & TOMBOL EXE/STP ──
+// ── 2. TIMPA FUNGSI ANTREAN UTK HANDLING STICKY PLAYER (FIX: SUNTIK FOTO COVER PREMIUM) ──
 window.playCurrentQueueIndex = function() {
   if(currentQueueIndex < 0 || currentQueueIndex >= currentQueue.length) return;
   const song = currentQueue[currentQueueIndex];
   
   if(miniPlayer) {
+    // ⚡ MODIFIKASI LAYOUT LEFT: Memaksa tata letak flex-row menyertakan foto cover lagu di paling kiriNow Playing
     miniPlayer.style.cssText = `
-      position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; z-index: 999 !important; 
+      position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; z-index: 9999 !important; 
       display: flex !important; align-items: center !important; justify-content: space-between !important;
-      background: rgba(10, 12, 18, 0.95) !important; backdrop-filter: blur(30px) !important;
+      background: rgba(10, 12, 18, 0.96) !important; backdrop-filter: blur(30px) !important;
       border-top: 1px solid rgba(255, 255, 255, 0.05) !important; padding: 14px 28px !important; box-shadow: 0 -10px 40px rgba(0,0,0,0.6) !important;
     `;
     miniPlayer.hidden = false;
@@ -94,10 +95,22 @@ window.playCurrentQueueIndex = function() {
   const formOvl = document.getElementById('formOverlay'); if(formOvl) formOvl.style.zIndex = '10000';
   const detailOvl = document.getElementById('detailOverlay'); if(detailOvl) detailOvl.style.zIndex = '10000';
 
-  if(playerTitle) playerTitle.textContent = song.title;
-  if(playerArtist) playerArtist.textContent = song.artist;
-  
-  const pCoverUI = document.getElementById('playerCoverUI'); if(pCoverUI) pCoverUI.src = song.cover || COVER_PLACEHOLDER;
+  // ⚡ SUNTIKAN VISUAL COVER LIVE: Modifikasi area teks penampung info di kiri bawah agar memuat tag IMG cover
+  const playerInfoBox = document.querySelector('.player-info');
+  if(playerInfoBox) {
+    playerInfoBox.style.cssText = "display: flex !important; align-items: center !important; gap: 14px !important; width: 30% !important; min-width: 220px !important; overflow: hidden !important;";
+    playerInfoBox.innerHTML = `
+      <img src="${song.cover || COVER_PLACEHOLDER}" style="width: 50px !important; height: 50px !important; border-radius: 8px !important; object-fit: cover !important; box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important; flex-shrink: 0 !important;" />
+      <div style="display: flex !important; flex-direction: column !important; overflow: hidden !important;">
+        <div id="playerTitle" style="font-weight: 700 !important; font-size: 14px !important; color: #fff !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">${song.title}</div>
+        <div id="playerArtist" style="font-size: 12px !important; color: #8b93b4 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; margin-top: 2px !important;">${song.artist}</div>
+      </div>
+    `;
+  } else {
+    // Fallback normal seandainya class induk tidak sengaja berubah struktur
+    if(playerTitle) playerTitle.textContent = song.title;
+    if(playerArtist) playerArtist.textContent = song.artist;
+  }
   
   const glow = document.getElementById('bgGlow');
   if(glow) { glow.style.backgroundImage = `url('${song.cover}')`; glow.style.opacity = 0.5; }
@@ -286,6 +299,7 @@ window.renderTagChips = function() {
         .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; position: relative; font-weight: 700 !important; } 
         .chip:active { transform: scale(0.92) !important; }
         
+        /* CSS Card Besar Aksi Konten Grid */
         .big-action-card {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15);
@@ -372,7 +386,7 @@ window.renderAll = function() {
     return;
   }
 
-  // 🛠️ CASE B: USER MEMBUKA "WEPLAYLIST" ATAU "MYPLAYLIST" (SUNTIK AUTOMATIC GRID COLLAGE ALA YT MUSIC)
+  // 🛠️ CASE B: USER MEMBUKA "WEPLAYLIST" ATAU "MYPLAYLIST" (STRICT HIERARCHY: MUSIC DIHAPUS TOTAL)
   if ((activeFolder === 'public' || activeFolder === 'private') && activeTag === '') {
     songsGrid.innerHTML = ''; 
 
@@ -405,13 +419,11 @@ window.renderAll = function() {
       const meta = createdFoldersData[tag] || { access: 'private' };
       if (meta.access === currentType) {
         
-        // Tarik lagu-lagu yang memiliki tag sub-folder ini untuk diekstrak gambarnya
         const subFolderTracks = songs.filter(s => s.tags && s.tags.includes(tag));
         
         const folderBox = document.createElement('div');
         folderBox.className = "grid-folder-item";
         
-        // Suntik layout thumbnail kolase dinamis kotak 4-grid sebelum nama folder kustom dirender
         folderBox.innerHTML = `
           <div class="folder-collage-box" id="grid-collage-${btoa(tag).replace(/=/g, '')}">
             <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--accent-2); font-size:11px;">EMPTY</div>
@@ -425,7 +437,6 @@ window.renderAll = function() {
         folderBox.onclick = () => { activeTag = tag; combineAndRender(); };
         songsGrid.appendChild(folderBox);
 
-        // Jika ada lagu di dalamnya, panggil engine pembangun kolase instan
         if(subFolderTracks.length > 0 && typeof window.generateCollageUrl === 'function') {
           const trackCovers = subFolderTracks.map(s => s.cover);
           window.generateCollageUrl(trackCovers, (imgUrl) => {
