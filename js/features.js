@@ -4,8 +4,17 @@
 
 console.log("⚡ features.js loaded! Browser Back Button Interceptor, Universe Hub & YT Blur Active.");
 
+// Flag internal untuk mengunci interseptor popstate agar tidak memicu returnToHub saat menghapus lagu
+window.isDeletingSong = false;
+
 // ── 0. BROWSER BACK BUTTON INTERCEPTOR (ANTI-KELUAR WEB & FIX MODAL) ──
 window.addEventListener('popstate', (e) => {
+    // 🛡️ JIKA SEDANG PROSES HAPUS LAGU, BLOKIR TOTAL AGAR TIDAK DILEMPAR KE HUB UUTAMA
+    if (window.isDeletingSong) {
+        window.isDeletingSong = false;
+        return;
+    }
+
     let modalClosed = false;
 
     // 1. Cek dan Tutup Custom Modal Kembangan
@@ -221,7 +230,6 @@ if (formSaveBtn) {
         }
         saveLocalData(); 
         
-        // Fix: Cek apakah modal diedit, jika ya amankan history back
         const currentOvl = document.getElementById('formOverlay');
         if(currentOvl && !currentOvl.hidden) { currentOvl.hidden = true; history.back(); }
         setTimeout(() => { combineAndRender(); }, 50);
@@ -341,23 +349,28 @@ if(origOpenForm) {
   };
 }
 
-// ✅ FIX ABSOLUT: Override fungsi deleteSong asli milik script.js agar tidak memicu popstate banting halaman ke Hub utama
+// ── ⚡ TIMPA FUNGSI DELETE MUSIK ASLI (ANTI-BANTING KE HUB UTAMA) ──
 const origDeleteSong = window.deleteSong;
 if(origDeleteSong) {
   window.deleteSong = function(id) {
-    // Jalankan penghapusan murni lewat database
     if (confirm("Delete this song permanently?")) {
+      // Aktifkan flag pengunci sebelum DOM berubah / render ulang agar popstate mendiamkan halaman
+      window.isDeletingSong = true;
+      
       const isCloudId = !String(id).startsWith('local-');
       if (isCloudId && db) {
         db.ref('songs/' + id).remove().then(() => {
           showToast("Deleted from Public!");
           combineAndRender();
-        });
+          // Matikan flag pengunci setelah render ulang selesai dilakukan
+          setTimeout(() => { window.isDeletingSong = false; }, 100);
+        }).catch(() => { window.isDeletingSong = false; });
       } else {
         localSongs = localSongs.filter(s => s.id !== id);
         saveLocalData();
         showToast("Deleted from Private!");
         combineAndRender();
+        setTimeout(() => { window.isDeletingSong = false; }, 100);
       }
     }
   };
@@ -469,7 +482,7 @@ window.renderAll = function() {
   const songsGrid = document.getElementById('playlistGrid');
   if (!songsGrid) return;
 
-  // 🛠️ CASE A: MENU RANDOM MUSIC ACTIVE (FIXED: SEKARANG MENAMPILKAN SEMUA MUSIK YANG SUDAH DI-ADD!)
+  // 🛠️ CASE A: MENU RANDOM MUSIC ACTIVE (MENAMPILKAN SEMUA MUSIK YANG SUDAH DI-ADD)
   if (activeFolder === 'random' && activeTag === '') {
     songsGrid.innerHTML = '';
     
@@ -482,7 +495,6 @@ window.renderAll = function() {
     bigAddSongCard.onclick = () => { if (typeof openFormModal === 'function') openFormModal(); };
     songsGrid.appendChild(bigAddSongCard);
 
-    // Render SEMUA musik tanpa filter sub-folder kustom agar terkumpul lengkap di sini
     if (songs && songs.length > 0) {
       songs.forEach(song => {
         if (typeof buildCard === 'function') { songsGrid.appendChild(buildCard(song)); }
