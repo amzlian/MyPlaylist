@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY & CASCADE DELETE ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY & NAV-FIX ENGINE)
 ═══════════════════════════════════════════════════ */
 
 console.log("⚡ features.js loaded! Strict Hierarchy, Random Track Logic & YT Music Blur Active.");
@@ -309,12 +309,6 @@ window.renderTagChips = function() {
 
     tagChips.style.cssText = "display: flex !important; gap: 8px !important; overflow-x: auto !important; scrollbar-width: none !important; padding: 6px 55px 6px 4px !important; width: 100% !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scroll-behavior: smooth !important; touch-action: pan-x !important; position: relative; overflow-y: visible !important;";
     tagChips.innerHTML = '';
-    tagChips.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: true});
-
-    if (!window.hasBouncedOnce) {
-      window.hasBouncedOnce = true;
-      setTimeout(() => { tagChips.scrollTo({ left: 60, behavior: 'smooth' }); setTimeout(() => tagChips.scrollTo({ left: 0, behavior: 'smooth' }), 500); }, 400);
-    }
 
     const majorFolders = [
       { id: 'discover', label: 'Discover Home' },
@@ -330,10 +324,20 @@ window.renderTagChips = function() {
       fBtn.className = `chip${isFolderActive ? ' active' : ''}`;
       fBtn.style.cssText = "font-size: 14px !important; padding: 10px 18px !important; text-transform: uppercase; letter-spacing: 0.5px;";
       fBtn.innerHTML = folder.label;
+      
+      // ⚡ REVOLUSI INTEGRASI PENUH: Paksa update status activeFolder, kosongkan tag kustom, 
+      // dan paksa update penanda .active secara lokal agar browser lu mematuhi saklar baru!
       fBtn.onclick = () => {
         activeFolder = folder.id; 
         activeTag = ''; 
-        renderAll();
+        
+        if(typeof window.activeMood !== 'undefined') window.activeMood = '';
+        
+        // Bersihkan tanda aktif dari semua chip lain secara manual sebelum merender ulang
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        fBtn.classList.add('active');
+        
+        combineAndRender();
         fBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       };
       tagChips.appendChild(fBtn);
@@ -341,7 +345,7 @@ window.renderTagChips = function() {
   }
 };
 
-// ── 7. REKAYASA TOTAL AREA KONTEN GRID (STRICT FOLDER-FIRST OVERRIDE) ──
+// ── 7. REKAYASA TOTAL AREA KONTEN GRID ──
 const originalRenderAll = window.renderAll;
 window.renderAll = function() {
   if (typeof originalRenderAll === 'function') originalRenderAll();
@@ -428,7 +432,6 @@ window.renderAll = function() {
     const folderTracks = songs.filter(s => s.tags && s.tags.includes(activeTag));
     songsGrid.innerHTML = '';
 
-    // ⚡ MODIFIKASI PREMIUM: Tombol Add Song Besar langsung memicu Modal Smart Search & Mengunci Tag Folder
     const bigAddTrackCard = document.createElement('div');
     bigAddTrackCard.className = "big-action-card";
     bigAddTrackCard.innerHTML = `
@@ -438,17 +441,9 @@ window.renderAll = function() {
     
     bigAddTrackCard.onclick = () => {
       if (typeof openFormModal === 'function') {
-        openFormModal(); // Buka modal input asli dari script.js
-        
-        // Paksa isi input tag agar langsung mengunci ke nama sub-folder saat ini
-        if (fTags) {
-          fTags.value = activeTag;
-        }
-        
-        // Fokuskan kursor langsung ke kolom Smart Search biar user bisa langsung ngetik bebas
-        if (fAutoSearch) {
-          setTimeout(() => fAutoSearch.focus(), 150);
-        }
+        openFormModal(); 
+        if (fTags) fTags.value = activeTag;
+        if (fAutoSearch) { setTimeout(() => fAutoSearch.focus(), 150); }
       }
     };
     songsGrid.appendChild(bigAddTrackCard);
@@ -550,7 +545,19 @@ window.openDetailModal = function(id) {
   moveFolderContainer.appendChild(label); moveFolderContainer.appendChild(select); detailPlatforms.appendChild(moveFolderContainer);
 };
 
-// ── 9. TIMPA FUNGSI COMBINE DATA SUPAYA LAGU BARU KESIMPAN PALING ATAS GRID ──
+// ── 9. TIMPA ENGINE FILTER UTAMA (SUNTIK PATCH DISCOVER HOME BIAR NYALA 100%) ──
+const originalGetFilteredSorted = window.getFilteredSorted;
+window.getFilteredSorted = function() {
+  if (activeFolder === 'discover') {
+    return [];
+  }
+  if (typeof originalGetFilteredSorted === 'function') {
+    return originalGetFilteredSorted();
+  }
+  return [];
+};
+
+// ── 10. TIMPA FUNGSI COMBINE DATA ──
 window.combineAndRender = function() {
   const markedLocal = localSongs.map(s => ({ ...s, isLocal: true, pinned: pinnedOfficialIds.includes(s.id) }));
   const sortedLocalAndCloud = [...cloudSongs, ...markedLocal].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
