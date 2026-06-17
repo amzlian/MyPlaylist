@@ -423,18 +423,34 @@ window.renderAll = function() {
     return;
   }
 
-  // 🛠️ CASE C: USER SUDAH MASUK KE DALAM SUB-FOLDER KUSTOM (ADD SONG & MUSIK MENYATU)
+  // 🛠️ CASE C: USER SUDAH MASUK KE DALAM SUB-FOLDER KUSTOM (SMART SEARCH REDIRECTION ACTIVE)
   if (activeTag !== '') {
     const folderTracks = songs.filter(s => s.tags && s.tags.includes(activeTag));
     songsGrid.innerHTML = '';
 
+    // ⚡ MODIFIKASI PREMIUM: Tombol Add Song Besar langsung memicu Modal Smart Search & Mengunci Tag Folder
     const bigAddTrackCard = document.createElement('div');
     bigAddTrackCard.className = "big-action-card";
     bigAddTrackCard.innerHTML = `
       <div style="font-size: 32px; color: var(--accent);">+</div>
       <div class="big-action-title">Add Song to ${activeTag}</div>
     `;
-    bigAddTrackCard.onclick = () => showQuickAddTracksModal(activeTag);
+    
+    bigAddTrackCard.onclick = () => {
+      if (typeof openFormModal === 'function') {
+        openFormModal(); // Buka modal input asli dari script.js
+        
+        // Paksa isi input tag agar langsung mengunci ke nama sub-folder saat ini
+        if (fTags) {
+          fTags.value = activeTag;
+        }
+        
+        // Fokuskan kursor langsung ke kolom Smart Search biar user bisa langsung ngetik bebas
+        if (fAutoSearch) {
+          setTimeout(() => fAutoSearch.focus(), 150);
+        }
+      }
+    };
     songsGrid.appendChild(bigAddTrackCard);
 
     if (folderTracks.length > 0) {
@@ -443,17 +459,15 @@ window.renderAll = function() {
       });
     }
 
-    // 💎 FIX: CUSTOM MODAL CONFIRMATION UTK MENGHAPUS FOLDER (DARK MODE LUXURY)
+    // 💎 CUSTOM MODAL CONFIRMATION UTK MENGHAPUS FOLDER (DARK MODE LUXURY)
     const remFolderCard = document.createElement('div');
     remFolderCard.className = "big-action-card";
     remFolderCard.style.cssText = "border-color: rgba(255, 75, 75, 0.2); background: rgba(255, 75, 75, 0.02); min-height: 80px; margin-top: 25px; grid-column: 1 / -1;";
     remFolderCard.innerHTML = `<div class="big-action-title" style="color:var(--danger)">Delete Entire Folder</div>`;
     
     remFolderCard.onclick = () => {
-      // Hapus modal lama jika duplikat
       const oldConfirm = document.getElementById('customConfirmModal'); if(oldConfirm) oldConfirm.remove();
 
-      // Bikin layout overlay backdrop blur kustom
       const confOverlay = document.createElement('div'); confOverlay.id = 'customConfirmModal';
       confOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(15px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; font-family: 'Space Mono', monospace;";
 
@@ -472,19 +486,15 @@ window.renderAll = function() {
 
       confOverlay.appendChild(confBox); document.body.appendChild(confOverlay);
 
-      // Aksi batal hapus
       document.getElementById('cancelConfBtn').onclick = () => confOverlay.remove();
 
-      // Aksi mutlak setuju hapus massal (Cascade Delete Execution)
       document.getElementById('actionConfBtn').onclick = () => {
         confOverlay.remove();
         
-        // 1. Bersihkan tag dari lagu lokal
         localSongs.forEach((s, idx) => {
           if(s.tags && s.tags.includes(activeTag)) { localSongs[idx].tags = s.tags.filter(t => t !== activeTag); }
         });
         
-        // 2. Bersihkan tag dari cloud Firebase
         if (db) {
           songs.forEach(s => {
             if(s.isCloud && s.tags && s.tags.includes(activeTag)) {
@@ -494,7 +504,6 @@ window.renderAll = function() {
           });
         }
 
-        // 3. Hapus folder dari metadata localStorage
         let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
         if(customFoldersMeta[activeTag]) { 
           delete customFoldersMeta[activeTag]; 
