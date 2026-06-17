@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY, NAV-FIX & BACK BUTTON ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY, NAV-FIX & PERFECT BACK ENGINE)
 ═══════════════════════════════════════════════════ */
 
 console.log("⚡ features.js loaded! Browser Back Button Interceptor, Universe Hub & YT Blur Active.");
 
-// ── 0. BROWSER BACK BUTTON INTERCEPTOR (ANTI-KELUAR WEB) ──
+// ── 0. BROWSER BACK BUTTON INTERCEPTOR (ANTI-KELUAR WEB & FIX MODAL) ──
 window.addEventListener('popstate', (e) => {
     let modalClosed = false;
 
@@ -21,7 +21,7 @@ window.addEventListener('popstate', (e) => {
     const detailOvl = document.getElementById('detailOverlay');
     if(detailOvl && !detailOvl.hidden) { detailOvl.hidden = true; modalClosed = true; }
 
-    if(modalClosed) return; // Jika berhasil nutup modal, stop fungsi biar gak mundur 2x
+    if(modalClosed) return; // ✅ Jika berhasil nutup modal, stop di sini! Jangan banting halaman.
 
     // 3. Jika sedang masuk ke dalam Sub-Folder, mundurkan ke halaman Grid Utama
     if (typeof activeTag !== 'undefined' && activeTag !== '') {
@@ -36,6 +36,14 @@ window.addEventListener('popstate', (e) => {
     }
 });
 
+// ── PERBAIKAN TOMBOL CLOSE X BAWAAN AGAR TUNDUK PADA HISTORY ──
+const origFormClose = document.getElementById('formClose');
+if(origFormClose) origFormClose.onclick = (e) => { e.preventDefault(); history.back(); };
+
+const origDetailClose = document.getElementById('detailClose');
+if(origDetailClose) origDetailClose.onclick = (e) => { e.preventDefault(); history.back(); };
+
+
 // ── 1. TIMPA FUNGSI UTAMA PLAY (DENGAN ENGINE ADAPTIVE BLUR YT MUSIC) ──
 window.runLivePlayer = function(song) {
   const trackList = getFilteredSorted();
@@ -47,7 +55,7 @@ window.runLivePlayer = function(song) {
   playCurrentQueueIndex(); 
 };
 
-// Fungsi Pembuat Background Blur Pekat Dinamis (YouTube Music Style) + Proteksi Cover Putih
+// Fungsi Pembuat Background Blur Pekat Dinamis (YouTube Music Style)
 function applyYTMusicBlur(imgUrl) {
   let bgOverlay = document.getElementById('yt-adaptive-blur-bg');
   if (!bgOverlay) {
@@ -101,7 +109,7 @@ function applyYTMusicBlur(imgUrl) {
   };
 }
 
-// ── 2. TIMPA FUNGSI ANTREAN UTK HANDLING STICKY PLAYER & TOMBOL EXE/STP ──
+// ── 2. TIMPA FUNGSI ANTREAN UTK HANDLING STICKY PLAYER ──
 window.playCurrentQueueIndex = function() {
   if(currentQueueIndex < 0 || currentQueueIndex >= currentQueue.length) return;
   const song = currentQueue[currentQueueIndex];
@@ -186,7 +194,10 @@ if (formSaveBtn) {
       <button class="btn-primary" id="btnSavePrivate" style="background: var(--muted); color: #fff; border: 1px solid var(--border);">Save Private</button>
       <button class="btn-primary" id="btnSavePublic" style="background: var(--accent); color: #fff;">Save Public</button>
     `;
-    const newCancel = document.getElementById('formCancelBtn'); if (newCancel) newCancel.onclick = () => closeModalsWithBack();
+    
+    const newCancel = document.getElementById('formCancelBtn'); 
+    if (newCancel) newCancel.onclick = (e) => { e.preventDefault(); history.back(); };
+    
     const btnPrivate = document.getElementById('btnSavePrivate'); const btnPublic = document.getElementById('btnSavePublic');
 
     const validateInputs = () => {
@@ -208,7 +219,12 @@ if (formSaveBtn) {
           localSongs.unshift({ id: 'local-' + Date.now(), title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links, addedAt: new Date().toISOString() });
           showToast("Saved to custom private folder!");
         }
-        saveLocalData(); combineAndRender(); closeModalsWithBack();
+        saveLocalData(); 
+        
+        // Fix: Cek apakah modal diedit, jika ya amankan history back
+        const currentOvl = document.getElementById('formOverlay');
+        if(currentOvl && !currentOvl.hidden) { currentOvl.hidden = true; history.back(); }
+        setTimeout(() => { combineAndRender(); }, 50);
       };
     }
     if (btnPublic) {
@@ -216,18 +232,26 @@ if (formSaveBtn) {
         const data = validateInputs(); if (!data) return;
         if (!db) { alert("Database Firebase tidak terhubung!"); return; }
         if (editingSongId) {
-          db.ref('songs/' + editingSongId).update({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links }).then(() => showToast("Public song updated!"));
+          db.ref('songs/' + editingSongId).update({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links }).then(() => {
+             showToast("Public song updated!");
+             const currentOvl = document.getElementById('formOverlay');
+             if(currentOvl && !currentOvl.hidden) { currentOvl.hidden = true; history.back(); }
+             setTimeout(() => { combineAndRender(); }, 50);
+          });
         } else {
-          db.ref('songs').push({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links, addedAt: new Date().toISOString() }).then(() => showToast("Added to Public Playlist!"));
+          db.ref('songs').push({ title: data.title, artist: data.artist, cover: fCover ? fCover.value.trim() : '', tags: data.tags, links: data.links, addedAt: new Date().toISOString() }).then(() => {
+             showToast("Added to Public Playlist!");
+             const currentOvl = document.getElementById('formOverlay');
+             if(currentOvl && !currentOvl.hidden) { currentOvl.hidden = true; history.back(); }
+             setTimeout(() => { combineAndRender(); }, 50);
+          });
         }
-        saveLocalData(); combineAndRender(); closeModalsWithBack();
       };
     }
   }
 }
 
 // ── 4. POP-UP MODAL BIKIN FOLDER BARU ──
-// Override pushState saat buka modal kustom
 function showCustomFolderModal(callback) {
   history.pushState({ modal: 'customFolderModal' }, '');
 
@@ -246,14 +270,15 @@ function showCustomFolderModal(callback) {
   const actionWrap = document.createElement('div'); actionWrap.style.cssText = "display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;";
   const cancelBtn = document.createElement('button'); cancelBtn.textContent = "Cancel"; cancelBtn.style.cssText = "background: transparent; border: none; color: #8b93b4; font-size: 12px; cursor: pointer; padding: 8px 12px;";
   
-  cancelBtn.onclick = () => { overlay.remove(); history.back(); };
+  cancelBtn.onclick = (e) => { e.preventDefault(); history.back(); };
   
   const confirmBtn = document.createElement('button'); confirmBtn.textContent = "Create"; confirmBtn.style.cssText = "background: var(--accent-2); border: none; color: #000; font-weight: 700; font-size: 12px; border-radius: 8px; padding: 8px 16px; cursor: pointer;";
-  confirmBtn.onclick = () => { 
+  
+  confirmBtn.onclick = (e) => { 
+      e.preventDefault();
       const val = input.value.trim(); const access = selectAccess.value; 
-      overlay.remove(); 
-      history.back(); // Pancing popstate
-      if(val) callback(val, access); 
+      history.back(); 
+      setTimeout(() => { if(val) callback(val, access); }, 50); 
   };
   
   actionWrap.appendChild(cancelBtn); actionWrap.appendChild(confirmBtn); box.appendChild(title); box.appendChild(input); box.appendChild(accessLabel); box.appendChild(selectAccess); box.appendChild(actionWrap); overlay.appendChild(box); document.body.appendChild(overlay);
@@ -261,8 +286,8 @@ function showCustomFolderModal(callback) {
 }
 
 // ── 5. POP-UP MODAL KELOLA MUSIK (ADD / REMOVE JALUR CEPAT) ──
-function showQuickAddTracksModal(folderName) {
-  history.pushState({ modal: 'quickAddModal' }, '');
+function showQuickAddTracksModal(folderName, isRefresh = false) {
+  if(!isRefresh) history.pushState({ modal: 'quickAddModal' }, '');
 
   const old = document.getElementById('quickAddModal'); if(old) old.remove();
   const overlay = document.createElement('div'); overlay.id = 'quickAddModal';
@@ -280,8 +305,9 @@ function showQuickAddTracksModal(folderName) {
         <div style="font-size:12px; color:#fff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.title}</div>
         <div style="font-size:11px; color:${inFolder ? 'var(--accent)' : '#6b7394'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.artist}</div>
       </div>
-      <button style="background:${inFolder ? 'var(--danger)' : 'var(--accent)'}; border:none; color:${inFolder ? '#fff' : '#000'}; font-size:10px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer; min-width:75px;">REMOVE</button>
+      <button style="background:${inFolder ? 'var(--danger)' : 'var(--accent)'}; border:none; color:${inFolder ? '#fff' : '#000'}; font-size:10px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer; min-width:75px;">${inFolder ? 'REMOVE' : 'ADD'}</button>
     `;
+    
     row.querySelector('button').onclick = (e) => {
       e.stopPropagation();
       if (inFolder) {
@@ -293,21 +319,47 @@ function showQuickAddTracksModal(folderName) {
         else { const idx = localSongs.findIndex(ls => ls.id === song.id); if (idx !== -1) { if(!localSongs[idx].tags) localSongs[idx].tags = []; localSongs[idx].tags.push(folderName); saveLocalData(); } }
         showToast(`Added "${song.title}"!`);
       }
-      overlay.remove(); combineAndRender(); history.back(); setTimeout(() => showQuickAddTracksModal(folderName), 150); 
+      combineAndRender();
+      showQuickAddTracksModal(folderName, true); 
     };
     listWrap.appendChild(row);
   });
+  
   const closeBtn = document.createElement('button'); closeBtn.textContent = "Close Panel"; closeBtn.style.cssText = "width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.05); color:#fff; border-radius:8px; padding:10px; font-size:12px; font-weight:600; cursor:pointer;";
-  closeBtn.onclick = () => { overlay.remove(); history.back(); }; 
+  
+  closeBtn.onclick = (e) => { e.preventDefault(); history.back(); }; 
+  
   box.appendChild(title); box.appendChild(listWrap); box.appendChild(closeBtn); overlay.appendChild(box); document.body.appendChild(overlay);
 }
 
-// Override openFormModal untuk inject pushState
+// Override openFormModal bawaan script.js untuk mendaftarkan state modal
 const origOpenForm = window.openFormModal;
 if(origOpenForm) {
   window.openFormModal = function(isEdit, id) {
-    history.pushState({ modal: 'form' }, '');
+    history.pushState({ modal: 'formOverlay' }, '');
     origOpenForm(isEdit, id);
+  };
+}
+
+// ✅ FIX ABSOLUT: Override fungsi deleteSong asli milik script.js agar tidak memicu popstate banting halaman ke Hub utama
+const origDeleteSong = window.deleteSong;
+if(origDeleteSong) {
+  window.deleteSong = function(id) {
+    // Jalankan penghapusan murni lewat database
+    if (confirm("Delete this song permanently?")) {
+      const isCloudId = !String(id).startsWith('local-');
+      if (isCloudId && db) {
+        db.ref('songs/' + id).remove().then(() => {
+          showToast("Deleted from Public!");
+          combineAndRender();
+        });
+      } else {
+        localSongs = localSongs.filter(s => s.id !== id);
+        saveLocalData();
+        showToast("Deleted from Private!");
+        combineAndRender();
+      }
+    }
   };
 }
 
@@ -344,7 +396,6 @@ window.renderTagChips = function() {
         .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; position: relative; font-weight: 700 !important; } 
         .chip:active { transform: scale(0.92) !important; }
         
-        /* CSS Card Besar Aksi Konten Grid */
         .big-action-card {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15);
@@ -384,7 +435,6 @@ window.renderTagChips = function() {
       const isFolderActive = activeFolder === folder.id && activeTag === '';
       fBtn.className = `chip${isFolderActive ? ' active' : ''}`;
       
-      // Styling khusus pembeda tombol Hub
       if (folder.id === 'hub') {
           fBtn.style.cssText = "font-size: 14px !important; padding: 10px 18px !important; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(124, 106, 247, 0.2) !important; border: 1px solid var(--accent) !important; color: #fff !important;";
       } else {
@@ -393,7 +443,6 @@ window.renderTagChips = function() {
       fBtn.innerHTML = folder.label;
       
       fBtn.onclick = () => {
-        // Jika yang ditekan adalah tombol Universe Hub, lemparkan kembali ke Hub!
         if(folder.id === 'hub') {
             if(typeof returnToHub === 'function') returnToHub();
             return;
@@ -420,7 +469,7 @@ window.renderAll = function() {
   const songsGrid = document.getElementById('playlistGrid');
   if (!songsGrid) return;
 
-  // 🛠️ CASE A: MENU RANDOM MUSIC ACTIVE
+  // 🛠️ CASE A: MENU RANDOM MUSIC ACTIVE (FIXED: SEKARANG MENAMPILKAN SEMUA MUSIK YANG SUDAH DI-ADD!)
   if (activeFolder === 'random' && activeTag === '') {
     songsGrid.innerHTML = '';
     
@@ -433,10 +482,9 @@ window.renderAll = function() {
     bigAddSongCard.onclick = () => { if (typeof openFormModal === 'function') openFormModal(); };
     songsGrid.appendChild(bigAddSongCard);
 
-    const randomPool = songs.filter(s => s.title && s.artist);
-    if (randomPool.length > 0) {
-      const shuffled = randomPool.sort(() => 0.5 - Math.random()).slice(0, 4);
-      shuffled.forEach(song => {
+    // Render SEMUA musik tanpa filter sub-folder kustom agar terkumpul lengkap di sini
+    if (songs && songs.length > 0) {
+      songs.forEach(song => {
         if (typeof buildCard === 'function') { songsGrid.appendChild(buildCard(song)); }
       });
     }
@@ -492,7 +540,7 @@ window.renderAll = function() {
         `;
         
         folderBox.onclick = () => { 
-            history.pushState({ folder: tag }, ''); // Catat ke browser history
+            history.pushState({ folder: tag }, ''); 
             activeTag = tag; 
             combineAndRender(); 
         };
@@ -537,7 +585,7 @@ window.renderAll = function() {
       });
     }
 
-    // 💎 CUSTOM MODAL CONFIRMATION UTK MENGHAPUS FOLDER (DARK MODE LUXURY)
+    // 💎 CUSTOM MODAL CONFIRMATION UTK MENGHAPUS FOLDER 
     const remFolderCard = document.createElement('div');
     remFolderCard.className = "big-action-card";
     remFolderCard.style.cssText = "border-color: rgba(255, 75, 75, 0.2); background: rgba(255, 75, 75, 0.02); min-height: 80px; margin-top: 25px; grid-column: 1 / -1;";
@@ -566,11 +614,10 @@ window.renderAll = function() {
 
       confOverlay.appendChild(confBox); document.body.appendChild(confOverlay);
 
-      document.getElementById('cancelConfBtn').onclick = () => { confOverlay.remove(); history.back(); };
+      document.getElementById('cancelConfBtn').onclick = (e) => { e.preventDefault(); history.back(); };
 
-      document.getElementById('actionConfBtn').onclick = () => {
-        confOverlay.remove();
-        history.back(); // Pancing popstate
+      document.getElementById('actionConfBtn').onclick = (e) => {
+        e.preventDefault();
         
         localSongs.forEach((s, idx) => {
           if(s.tags && s.tags.includes(activeTag)) { localSongs[idx].tags = s.tags.filter(t => t !== activeTag); }
@@ -594,7 +641,14 @@ window.renderAll = function() {
         showToast(`Folder deleted.`); 
         const fallbackFolder = activeFolder;
         activeTag = ''; activeFolder = fallbackFolder;
-        saveLocalData(); combineAndRender();
+        
+        saveLocalData(); 
+        
+        const targetModal = document.getElementById('customConfirmModal');
+        if(targetModal) targetModal.remove();
+        history.back();
+        
+        setTimeout(() => { combineAndRender(); }, 50);
       };
     };
     songsGrid.appendChild(remFolderCard);
@@ -629,7 +683,7 @@ if(origOpenDetail) {
       const targetFolder = e.target.value; if (!targetFolder) return;
       if (!song.isLocal && db) { db.ref('songs/' + song.id).update({ tags: [targetFolder] }); } 
       else { const localIdx = localSongs.findIndex(s => s.id === song.id); if (localIdx !== -1) { localSongs[localIdx].tags = [targetFolder]; saveLocalData(); } }
-      combineAndRender(); closeModalsWithBack(); showToast(`Moved to ${targetFolder}!`);
+      combineAndRender(); history.back(); showToast(`Moved to ${targetFolder}!`);
     };
     moveFolderContainer.appendChild(label); moveFolderContainer.appendChild(select); detailPlatforms.appendChild(moveFolderContainer);
   };
