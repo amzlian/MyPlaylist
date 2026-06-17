@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (STRICT FOLDER-FIRST ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (STRICT FOLDER HIERARCHY ENGINE)
 ═══════════════════════════════════════════════════ */
 
-console.log("⚡ features.js loaded! Strict Folder-First Hierarchy & Dynamic Blur Active.");
+console.log("⚡ features.js loaded! Strict Hierarchy, Random Track Logic & YT Music Blur Active.");
 
 // ── 1. TIMPA FUNGSI UTAMA PLAY (DENGAN ENGINE ADAPTIVE BLUR YT MUSIC) ──
 window.runLivePlayer = function(song) {
@@ -229,8 +229,8 @@ function showQuickAddTracksModal(folderName) {
     const row = document.createElement('div'); row.style.cssText = "display:flex; align-items:center; justify-content:space-between; background:#0c0f16; border:1px solid rgba(255,255,255,0.03); padding:10px; border-radius:10px;";
     row.innerHTML = `
       <div style="flex:1; min-width:0; padding-right:10px;">
-        <div style="font-size:12px; color:#fff; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.title}</div>
-        <div style="font-size:11px; color:${inFolder ? 'var(--accent)' : '#6b7394'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${song.artist}</div>
+        <div style="font-size:12px; color:#fff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.title}</div>
+        <div style="font-size:11px; color:${inFolder ? 'var(--accent)' : '#6b7394'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.artist}</div>
       </div>
       <button style="background:${inFolder ? 'var(--danger)' : 'var(--accent)'}; border:none; color:${inFolder ? '#fff' : '#000'}; font-size:10px; font-weight:800; border-radius:6px; padding:6px 10px; cursor:pointer; min-width:75px;">${inFolder ? 'REMOVE' : 'ADD'}</button>
     `;
@@ -253,12 +253,12 @@ function showQuickAddTracksModal(folderName) {
   closeBtn.onclick = () => overlay.remove(); box.appendChild(title); box.appendChild(listWrap); box.appendChild(closeBtn); overlay.appendChild(box); document.body.appendChild(overlay);
 }
 
-// ── 6. ENGINE CORE: PREMIUM HEADER MECHANISM ──
+// ── 6. ENGINE CORE: PREMIUM NAVIGATION INJECTION (RANDOM FIRST + NO EMOT) ──
 window.renderTagChips = function() {
   if (customFolderTitle) customFolderTitle.style.display = 'none';
   if (folderBar) folderBar.style.display = 'none'; 
 
-  const logoBrand = document.querySelector('.logo') || document.querySelector('.brand-logo');
+  const logoBrand = document.querySelector('.logo') || document.querySelector('.brand-logo') || document.querySelector('.brand');
   if (logoBrand) {
     logoBrand.style.cssText = `
       font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 900;
@@ -286,6 +286,7 @@ window.renderTagChips = function() {
         .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; position: relative; font-weight: 700 !important; } 
         .chip:active { transform: scale(0.92) !important; }
         
+        /* Inner Content Card Box Design */
         .big-action-card {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15);
@@ -298,9 +299,9 @@ window.renderTagChips = function() {
         }
         .big-action-title { font-size: 15px; font-weight: 800; color: #fff; margin-top: 8px; text-transform: uppercase; }
         
-        .grid-folder-item { background: rgba(16, 20, 30, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
+        .grid-folder-item { background: rgba(16, 20, 30, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 22px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
         .grid-folder-item:hover { background: rgba(255,255,255,0.05); border-color: var(--accent); }
-        .folder-icon-box { background: rgba(0,255,200,0.1); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #00ffcc; font-weight: bold; font-size: 14px; }
+        .folder-icon-box { background: rgba(0,255,200,0.1); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #00ffcc; font-weight: bold; font-size: 13px; font-family: 'Space Mono', monospace; }
       `; 
       document.head.appendChild(styleAnim);
       parent.insertBefore(wrapper, tagChips); wrapper.appendChild(tagChips); wrapper.appendChild(fadeIndicator);
@@ -314,12 +315,15 @@ window.renderTagChips = function() {
       setTimeout(() => { tagChips.scrollTo({ left: 60, behavior: 'smooth' }); setTimeout(() => tagChips.scrollTo({ left: 0, behavior: 'smooth' }), 500); }, 400);
     }
 
-    const majorFolders = [
+    // 🚀 A. Random Music Dipaksa Berada Paling Kiri
+     const majorFolders = [
+      { id: 'discover', label: 'Discover Home' },
       { id: 'random', label: 'Random Music' },
       { id: 'public', label: 'WePlaylist' },
       { id: 'private', label: 'MyPlaylist' },
       { id: 'favorite', label: 'MyFavorite' }
     ];
+
 
     majorFolders.forEach(folder => {
       const fBtn = document.createElement('button');
@@ -329,28 +333,46 @@ window.renderTagChips = function() {
       fBtn.innerHTML = folder.label;
       fBtn.onclick = () => {
         activeFolder = folder.id; 
-        activeTag = '';
+        activeTag = ''; // Reset folder kustom pas navigasi utama diganti
         renderAll();
         fBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       };
       tagChips.appendChild(fBtn);
     });
+
+    const divider = document.createElement('div'); divider.style.cssText = "width: 1px; min-width: 1px; background: rgba(255,255,255,0.15); margin: 6px 4px;"; tagChips.appendChild(divider);
+
+    // B. DAFTAR SIDE FOLDER KUSTOM SEBAGAI CADANGAN
+    const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
+    const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
+    const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
+
+    totalFolders.forEach(tag => {
+      const meta = createdFoldersData[tag] || { access: 'private' };
+      const prefix = meta.access === 'public' ? 'Public:' : 'Folder:';
+      const btn = document.createElement('button'); btn.className = `chip${activeTag === tag ? ' active' : ''}`;
+      btn.style.setProperty('white-space', 'nowrap', 'important'); btn.textContent = `${prefix} ${tag}`;
+      btn.onclick = () => { activeTag = tag; renderAll(); btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }; 
+      tagChips.appendChild(btn);
+    });
   }
 };
 
-// ── 7. REKAYASA TOTAL AREA KONTEN GRID (STRICT FOLDER-FIRST OVERRIDE) ──
+// ── 7. REKAYASA TOTAL RENDER GRID (STRICT HIERARCHY ENGINE - ANTI BOCOR 100%) ──
 const originalRenderAll = window.renderAll;
 window.renderAll = function() {
-  // Panggil data engine default agar sinkronisasi data internal tetap aman berjalan
+  // Panggil render default bawaan agar sync cache playlistGrid.innerHTML tetap terisi data
   if (typeof originalRenderAll === 'function') originalRenderAll();
 
-  const songsGrid = document.querySelector('.songs-grid') || document.querySelector('.grid-container') || document.getElementById('songsGrid');
+  // Bind element target dari index.html lu
+  const songsGrid = document.getElementById('playlistGrid');
   if (!songsGrid) return;
 
-  // 🛠️ CASE A: MENU RANDOM MUSIC ACTIVE
+  // 💎 CASE A: USER SEDANG DI MENU 'RANDOM MUSIC'
   if (activeFolder === 'random' && activeTag === '') {
-    songsGrid.innerHTML = '';
+    songsGrid.innerHTML = ''; // Clear total
     
+    // Pasang tombol Add Song besar disebelah musik
     const bigAddSongCard = document.createElement('div');
     bigAddSongCard.className = "big-action-card";
     bigAddSongCard.innerHTML = `
@@ -364,33 +386,24 @@ window.renderAll = function() {
     if (randomPool.length > 0) {
       const shuffled = randomPool.sort(() => 0.5 - Math.random()).slice(0, 4);
       shuffled.forEach(song => {
-        const item = document.createElement('div');
-        item.className = "song-item";
-        item.style.cssText = "background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
-        item.innerHTML = `
-          <img src="${song.cover || COVER_PLACEHOLDER}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover;" />
-          <div style="flex:1; min-width:0;">
-            <div style="font-size:13px; color:#fff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.title}</div>
-            <div style="font-size:11px; color:#6b7394; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.artist}</div>
-          </div>
-        `;
-        item.onclick = () => runLivePlayer(song);
-        songsGrid.appendChild(item);
+        // Gunakan UI buildCard asli dari script.js lu agar drop-menu preview berfungsi normal
+        if (typeof buildCard === 'function') {
+          songsGrid.appendChild(buildCard(song));
+        }
       });
     }
     return;
   }
 
-  // 🛠️ CASE B: USER MEMBUKA "WEPLAYLIST" ATAU "MYPLAYLIST" (STRICT: MUSIK DIHAPUS TOTAL DARI HALAMAN DEPAN!)
+  // 💎 CASE B: USER BUKA WEPLAYLIST / MYPLAYLIST (STRICT HIERARCHY: DAFTAR MUSIK DIHAPUS TOTAL DARIPADA BOCOR)
   if ((activeFolder === 'public' || activeFolder === 'private') && activeTag === '') {
-    // KUNCI UTAMA: Sapu bersih semua list lagu agar tidak bocor keluar folder
-    songsGrid.innerHTML = '';
+    songsGrid.innerHTML = ''; // SAPU BERSIH LAGU BAWAAN SCRIPT.JS
 
-    // 1. Tampilkan Tombol Add Folder Besar Paling Depan
+    // 1. Suntik tombol Add Folder besar didepannya
     const bigAddFolderCard = document.createElement('div');
     bigAddFolderCard.className = "big-action-card";
     bigAddFolderCard.innerHTML = `
-      <div style="font-size: 32px; color: var(--accent-2, #00ffcc);">+</div>
+      <div style="font-size: 32px; color: var(--accent-2);">+</div>
       <div class="big-action-title">Add Folder</div>
     `;
     bigAddFolderCard.onclick = () => {
@@ -407,12 +420,12 @@ window.renderAll = function() {
     };
     songsGrid.appendChild(bigAddFolderCard);
 
-    // 2. Ambil data sub-folder terdaftar
+    // 2. Tarik metadata folder kustom
     const createdFoldersData = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
     const existingSongTags = [...new Set(songs.flatMap(s => s.tags || []))].filter(Boolean);
     const totalFolders = [...new Set([...Object.keys(createdFoldersData), ...existingSongTags])].sort();
 
-    // 3. Render folder yang sesuai dengan kategori parent aktif
+    // 3. Render folder yang status tipenya sesuai dengan parent tab aktif
     const currentType = activeFolder === 'public' ? 'public' : 'private';
     totalFolders.forEach(tag => {
       const meta = createdFoldersData[tag] || { access: 'private' };
@@ -423,27 +436,25 @@ window.renderAll = function() {
           <div class="folder-icon-box">DIR</div>
           <div style="flex:1; min-width:0;">
             <div style="font-size:14px; color:#fff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${tag}</div>
-            <div style="font-size:11px; color:#6b7394;">Click to open folder</div>
+            <div style="font-size:11px; color:#6b7394;">Open Folder</div>
           </div>
         `;
         folderBox.onclick = () => {
-          activeTag = tag; // Set pointer aktif masuk ke sub-folder ini
+          activeTag = tag; // Giring pointer aktif masuk kedalam sub-folder genre ini
           combineAndRender();
         };
         songsGrid.appendChild(folderBox);
       }
     });
-    return; // Kunci total agar lagu liar di luar folder tidak dirender
+    return; // Kunci total agar sisa loop lagu di script.js ga tembus keluar
   }
 
-  // 🛠️ CASE C: USER SUDAH MASUK KE DALAM SUB-FOLDER KUSTOM (DI SINI BARU MUSIK MENYATU DENGAN ADD SONG)
+  // 💎 CASE C: USER MASUK KE DALAM SUB-FOLDER (DI SINI BARU LAGU & TOMBOL ADD SONG MENYATU RAPI)
   if (activeTag !== '') {
     const folderTracks = songs.filter(s => s.tags && s.tags.includes(activeTag));
-    
-    // Reset isi grid total
-    songsGrid.innerHTML = '';
+    songsGrid.innerHTML = ''; // Bersihkan kontainer utama
 
-    // 1. Suntik Tombol Add Song Besar Khusus Folder Ini Paling Depan
+    // 1. Suntik tombol Add Song Besar khusus folder ini di barisan paling depan
     const bigAddTrackCard = document.createElement('div');
     bigAddTrackCard.className = "big-action-card";
     bigAddTrackCard.innerHTML = `
@@ -453,31 +464,22 @@ window.renderAll = function() {
     bigAddTrackCard.onclick = () => showQuickAddTracksModal(activeTag);
     songsGrid.appendChild(bigAddTrackCard);
 
-    // 2. Satukan dan Render Semua Musik Khusus Folder Ini Tepat di Samping/Bawah Tombol Add Song
+    // 2. Render dan satukan musik bwaan folder ke sebelah tombol Add Song
     if (folderTracks.length > 0) {
       folderTracks.forEach(song => {
-        const item = document.createElement('div');
-        item.className = "song-item"; 
-        item.style.cssText = "background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; box-sizing: border-box; width: 100%;";
-        item.innerHTML = `
-          <img src="${song.cover || COVER_PLACEHOLDER}" style="width: 46px; height: 46px; border-radius: 6px; object-fit: cover;" />
-          <div style="flex:1; min-width:0;">
-            <div style="font-size:13px; color:#fff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.title}</div>
-            <div style="font-size:11px; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${song.artist}</div>
-          </div>
-        `;
-        item.onclick = () => runLivePlayer(song);
-        songsGrid.appendChild(item);
+        if (typeof buildCard === 'function') {
+          songsGrid.appendChild(buildCard(song));
+        }
       });
     }
 
-    // 3. Tambahkan Tombol Hapus Folder di Ujung Paling Bawah Konten Folder
+    // 3. Taruh tombol Delete Folder bersih di paling bawah konten sub-folder
     const remFolderCard = document.createElement('div');
     remFolderCard.className = "big-action-card";
-    remFolderCard.style.cssText = "border-color: rgba(255,75,75,0.2); background: rgba(255,75,75,0.02); min-height: 80px; margin-top: 20px; grid-column: 1 / -1;";
+    remFolderCard.style.cssText = "border-color: rgba(255, 75, 75, 0.2); background: rgba(255, 75, 75, 0.02); min-height: 80px; margin-top: 25px; grid-column: 1 / -1;";
     remFolderCard.innerHTML = `<div class="big-action-title" style="color:var(--danger)">Delete Entire Folder</div>`;
     remFolderCard.onclick = () => {
-      if(confirm(`Delete folder "${activeTag}"?\n(Songs will not be lost).`)) {
+      if(confirm(`Delete folder "${activeTag}"?\n(Songs will remain safe in the library).`)) {
         localSongs.forEach((s, idx) => { if(s.tags && s.tags.includes(activeTag)) localSongs[idx].tags = s.tags.filter(t => t !== activeTag); }); saveLocalData();
         let customFoldersMeta = JSON.parse(localStorage.getItem('amz_folders_meta')) || {};
         if(customFoldersMeta[activeTag]) { delete customFoldersMeta[activeTag]; localStorage.setItem('amz_folders_meta', JSON.stringify(customFoldersMeta)); }
@@ -526,9 +528,11 @@ window.combineAndRender = function() {
   renderAll();
 };
 
-// Atur inisialisasi awal halaman agar langsung membuka menu 'random'
+// Override inisialisasi default pas pertama kali dibuka ke tab 'random'
+// Atur inisialisasi awal halaman agar langsung membuka menu 'discover'
 if (typeof activeFolder !== 'undefined' && activeFolder === 'all') {
-  activeFolder = 'random';
+  activeFolder = 'discover';
 }
+
 
 setTimeout(() => { if(typeof renderTagChips === 'function') renderTagChips(); }, 400);
