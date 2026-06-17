@@ -71,7 +71,7 @@ function showUniverseHub() {
                 Enter to see my favorite game.. soon
             </button>
             <button style="background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.15); color: #4d5675; padding: 20px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: not-allowed; text-transform: uppercase; letter-spacing: 1px;">
-                Enter to my life.. soon
+                Enter to my life.. just kidding ✌🏻🙂‍↕️
             </button>
         </div>
         
