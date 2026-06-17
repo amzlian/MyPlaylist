@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY & NAV-FIX ENGINE)
+   AMZ LIAN — Playlist  ·  features.js (STRICT HIERARCHY & CASCADE DELETE ENGINE)
 ═══════════════════════════════════════════════════ */
 
 console.log("⚡ features.js loaded! Strict Hierarchy, Random Track Logic & YT Music Blur Active.");
@@ -286,7 +286,6 @@ window.renderTagChips = function() {
         .chip { transition: transform 0.15s, background 0.2s !important; scroll-snap-align: center; position: relative; font-weight: 700 !important; } 
         .chip:active { transform: scale(0.92) !important; }
         
-        /* CSS Card Besar Aksi Konten Grid */
         .big-action-card {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15);
@@ -299,9 +298,12 @@ window.renderTagChips = function() {
         }
         .big-action-title { font-size: 15px; font-weight: 800; color: #fff; margin-top: 8px; text-transform: uppercase; }
         
-        .grid-folder-item { background: rgba(16, 20, 30, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 22px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
+        .grid-folder-item { background: rgba(16, 20, 30, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
         .grid-folder-item:hover { background: rgba(255,255,255,0.05); border-color: var(--accent); }
         .folder-icon-box { background: rgba(0,255,200,0.1); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #00ffcc; font-weight: bold; font-size: 13px; font-family: 'Space Mono', monospace; }
+        
+        /* Premium Thumbnail Container untuk 4-Grid Kolase Cover sub-folder */
+        .folder-collage-box { width: 60px; height: 65px; border-radius: 8px; overflow: hidden; background: #131720; display: flex; flex-wrap: wrap; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
       `; 
       document.head.appendChild(styleAnim);
       parent.insertBefore(wrapper, tagChips); wrapper.appendChild(tagChips); wrapper.appendChild(fadeIndicator);
@@ -325,18 +327,12 @@ window.renderTagChips = function() {
       fBtn.style.cssText = "font-size: 14px !important; padding: 10px 18px !important; text-transform: uppercase; letter-spacing: 0.5px;";
       fBtn.innerHTML = folder.label;
       
-      // ⚡ REVOLUSI INTEGRASI PENUH: Paksa update status activeFolder, kosongkan tag kustom, 
-      // dan paksa update penanda .active secara lokal agar browser lu mematuhi saklar baru!
       fBtn.onclick = () => {
         activeFolder = folder.id; 
         activeTag = ''; 
-        
         if(typeof window.activeMood !== 'undefined') window.activeMood = '';
-        
-        // Bersihkan tanda aktif dari semua chip lain secara manual sebelum merender ulang
         document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         fBtn.classList.add('active');
-        
         combineAndRender();
         fBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       };
@@ -376,7 +372,7 @@ window.renderAll = function() {
     return;
   }
 
-  // 🛠️ CASE B: USER MEMBUKA "WEPLAYLIST" ATAU "MYPLAYLIST" (STRICT HIERARCHY: MUSIC DIHAPUS TOTAL)
+  // 🛠️ CASE B: USER MEMBUKA "WEPLAYLIST" ATAU "MYPLAYLIST" (SUNTIK AUTOMATIC GRID COLLAGE ALA YT MUSIC)
   if ((activeFolder === 'public' || activeFolder === 'private') && activeTag === '') {
     songsGrid.innerHTML = ''; 
 
@@ -408,20 +404,35 @@ window.renderAll = function() {
     totalFolders.forEach(tag => {
       const meta = createdFoldersData[tag] || { access: 'private' };
       if (meta.access === currentType) {
+        
+        // Tarik lagu-lagu yang memiliki tag sub-folder ini untuk diekstrak gambarnya
+        const subFolderTracks = songs.filter(s => s.tags && s.tags.includes(tag));
+        
         const folderBox = document.createElement('div');
         folderBox.className = "grid-folder-item";
+        
+        // Suntik layout thumbnail kolase dinamis kotak 4-grid sebelum nama folder kustom dirender
         folderBox.innerHTML = `
-          <div class="folder-icon-box">DIR</div>
+          <div class="folder-collage-box" id="grid-collage-${btoa(tag).replace(/=/g, '')}">
+            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--accent-2); font-size:11px;">EMPTY</div>
+          </div>
           <div style="flex:1; min-width:0;">
             <div style="font-size:14px; color:#fff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${tag}</div>
-            <div style="font-size:11px; color:#6b7394;">Open Folder</div>
+            <div style="font-size:11px; color:#6b7394;">${subFolderTracks.length} tracks inside</div>
           </div>
         `;
-        folderBox.onclick = () => {
-          activeTag = tag; 
-          combineAndRender();
-        };
+        
+        folderBox.onclick = () => { activeTag = tag; combineAndRender(); };
         songsGrid.appendChild(folderBox);
+
+        // Jika ada lagu di dalamnya, panggil engine pembangun kolase instan
+        if(subFolderTracks.length > 0 && typeof window.generateCollageUrl === 'function') {
+          const trackCovers = subFolderTracks.map(s => s.cover);
+          window.generateCollageUrl(trackCovers, (imgUrl) => {
+            const collageTarget = document.getElementById(`grid-collage-${btoa(tag).replace(/=/g, '')}`);
+            if(collageTarget) collageTarget.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; object-fit:cover;" />`;
+          });
+        }
       }
     });
     return;
